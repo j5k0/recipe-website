@@ -1,0 +1,7 @@
+.env
+.env.loca
+packages/*/.env
+packages/*/.env.local
+node_modules
+packages/*/node_modules
+packages/*/dist
