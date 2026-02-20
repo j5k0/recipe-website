@@ -1,5 +1,5 @@
 .env
-.env.loca
+.env.local
 packages/*/.env
 packages/*/.env.local
 node_modules
