@@ -17,7 +17,7 @@ export default function Navigation() {
             <line x1="6" y1="17" x2="18" y2="17" />
           </svg>
           <span className="text-lg font-semibold text-gray-900 tracking-tight">
-            Recipefy
+            Komanda26
           </span>
         </a>
 
