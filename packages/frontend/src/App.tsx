@@ -1,13 +1,12 @@
-import './App.css'
+import "./App.css";
+import Navigation from "./components/navigation";
 
 function App() {
   return (
     <>
-      <div>
-        <p> Hello World </p>
-      </div>
+      <Navigation />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
