@@ -1,13 +1,14 @@
-import './App.css'
+import "./App.css";
+import Navigation from "./components/navigation";
+import ComingSoon from "./components/comingsoon";
 
 function App() {
   return (
     <>
-      <div>
-        <p> Hello World </p>
-      </div>
+      <Navigation />
+      <ComingSoon />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
