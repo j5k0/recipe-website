@@ -1,13 +1,35 @@
 import { useState, useRef } from "react";
 
+const TAGS = [
+  { label: "Meat", emoji: "🥩" },
+  { label: "Salad", emoji: "🥗" },
+  { label: "Vegetarian", emoji: "🥦" },
+  { label: "Seafood", emoji: "🐟" },
+  { label: "Pasta", emoji: "🍝" },
+  { label: "Soup", emoji: "🍲" },
+  { label: "Dessert", emoji: "🍰" },
+  { label: "Breakfast", emoji: "🍳" },
+  { label: "Pizza", emoji: "🍕" },
+  { label: "Vegan", emoji: "🌱" },
+  { label: "Spicy", emoji: "🌶️" },
+  { label: "Quick", emoji: "⚡" },
+];
+
 export default function ShareRecipeForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState([""]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleTag = (label: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label],
+    );
+  };
 
   const addIngredient = () => setIngredients([...ingredients, ""]);
 
@@ -35,11 +57,13 @@ export default function ShareRecipeForm() {
       title,
       description,
       ingredients,
+      tags: selectedTags,
       image: imagePreview,
     });
     setTitle("");
     setDescription("");
     setIngredients([""]);
+    setSelectedTags([]);
     setImagePreview(null);
     setIsExpanded(false);
     setSubmitted(true);
@@ -251,6 +275,38 @@ export default function ShareRecipeForm() {
                   </svg>
                   Add Ingredient
                 </button>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags
+                  {selectedTags.length > 0 && (
+                    <span className="ml-2 text-xs text-gray-400 font-normal">
+                      {selectedTags.length} selected
+                    </span>
+                  )}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {TAGS.map(({ label, emoji }) => {
+                    const active = selectedTags.includes(label);
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => toggleTag(label)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
+                          active
+                            ? "bg-gray-900 text-white border-gray-900"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Actions */}
