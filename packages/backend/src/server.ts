@@ -4,10 +4,9 @@ import { createRecipe } from "./db/recipes"
 const router = express.Router();
 
 router.post("/recipes", async (req, res) => {
-    console.log("received request");
     try{
-        const { title, description } = req.body;
-        const recipe = await createRecipe({ title, description });
+        const { title, description, ingredients } = req.body;
+        const recipe = await createRecipe({ title, description, ingredients });
         res.status(201).json(recipe);
     } catch (err){
         console.error(err);
