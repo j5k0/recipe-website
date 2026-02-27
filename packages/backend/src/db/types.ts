@@ -3,5 +3,6 @@ export interface Recipe{
     title: string;
     description: string;
     ingredients: string[];
+    tags: string[];
     created_at: string;
 }

@@ -53,10 +53,11 @@ export default function ShareRecipeForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { title, description, ingredients, selectedTags };
     const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) throw new Error("Failed to submit");
