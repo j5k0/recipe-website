@@ -51,8 +51,17 @@ export default function ShareRecipeForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { title, description, ingredients, selectedTags };
+    const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error("Failed to submit");
+
     console.log("Recipe submitted:", {
       title,
       description,
@@ -319,7 +328,9 @@ export default function ShareRecipeForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsExpanded(false)}
+                  onClick={() => {
+                      setIsExpanded(false);
+                  }}
                   className="px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700"
                 >
                   Cancel
