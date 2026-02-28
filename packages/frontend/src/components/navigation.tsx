@@ -1,9 +1,11 @@
+import { NavLink } from "react-router-dom";
+
 export default function Navigation() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-6">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 shrink-0">
+        <NavLink to="/" className="flex items-center gap-2 shrink-0">
           <svg
             className="w-7 h-7 text-gray-900"
             viewBox="0 0 24 24"
@@ -19,12 +21,16 @@ export default function Navigation() {
           <span className="text-lg font-semibold text-gray-900 tracking-tight">
             Komanda26
           </span>
-        </a>
+        </NavLink>
 
         {/* Main Menu link */}
-        <a
-          href="/"
-          className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors shrink-0"
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => `flex items-center gap-1.5 text-sm transition-colors shrink-0 ${
+            isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"
+          }`
+        }
         >
           <svg
             className="w-4 h-4"
@@ -38,8 +44,35 @@ export default function Navigation() {
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
-          Main Menu
-        </a>
+          Home
+        </NavLink>
+
+        {/* Recipes page link */}
+        <NavLink
+        to="/recipes"
+        className={({ isActive }) =>
+          `text-sm transition-colors ${
+            isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"
+          }`
+        }
+        >
+          Recipes
+        </NavLink>
+
+        {/* About page link */}
+        <NavLink to="/about" className={({ isActive }) => `text-sm transition-colors ${isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}>
+          About
+        </NavLink>
+
+        {/* Account page link */}
+        <NavLink to="/account" className={({ isActive }) => `text-sm transition-colors ${isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}>
+          Account
+        </NavLink>
+
+        {/* Settings page link */}
+        <NavLink to="/settings" className={({ isActive }) => `text-sm transition-colors ${isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}>
+          Settings
+        </NavLink>
 
         {/* Search bar */}
         <div className="flex-1 max-w-xl relative">
