@@ -5,4 +5,5 @@ export interface Recipe{
     ingredients: string[];
     tags: string[];
     created_at: string;
+    image: string | null;
 }
