@@ -53,30 +53,29 @@ export default function ShareRecipeForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { title, description, ingredients, selectedTags };
-    const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/recipes", {
+    
+    // FormData object to send multipart/form-data (needed for file uploads)
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    ingredients.forEach(i => formData.append("ingredients", i));
+    selectedTags.forEach(t => formData.append("selectedTags", t));
+
+    if (fileInputRef.current?.files?.[0]){
+      formData.append("image", fileInputRef.current.files[0]);
+    }
+
+    // Send the FormData to the backend
+    const response = await fetch(
+      import.meta.env.VITE_BACKEND_URL + "/api/recipes",
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
+        body: formData,
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to submit");
-
-    console.log("Recipe submitted:", {
-      title,
-      description,
-      ingredients,
-      tags: selectedTags,
-      image: imagePreview,
-    });
-    setTitle("");
-    setDescription("");
-    setIngredients([""]);
-    setSelectedTags([]);
-    setImagePreview(null);
-    setIsExpanded(false);
     setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
   };
 
   return (
