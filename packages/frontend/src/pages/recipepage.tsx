@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ShareRecipe from "../components/sharerecipe";
 
 interface Tag {
   id: string;
@@ -402,6 +403,8 @@ export default function RecipesPage() {
         )}
       </div>
 
+      <ShareRecipe />
+      
       {selected && (
         <RecipeModal recipe={selected} onClose={() => setSelected(null)} />
       )}

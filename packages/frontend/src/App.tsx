@@ -1,6 +1,5 @@
 import "./App.css";
 import Navigation from "./components/navigation";
-import ShareRecipe from "./components/sharerecipe";
 import Footer from "./components/footer";
 import RecipesPage from "./pages/recipepage";
 import About from "./pages/About";
@@ -12,7 +11,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 function App() {
   return (
     <>
+      <div className="min-h-screen flex flex-col">
       <Navigation />
+      <main className="flex-1">
       <Routes>
         <Route path="/" element={<RecipesPage />} />
         <Route path="/recipes" element={<Navigate to="/" replace />} />
@@ -20,9 +21,10 @@ function App() {
         <Route path="/account" element={<Account />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
-
-      <ShareRecipe />
+      </main>
+      
       <Footer />
+      </div>
     </>
   );
 }
