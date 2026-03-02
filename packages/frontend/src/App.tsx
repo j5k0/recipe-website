@@ -3,12 +3,13 @@ import Navigation from "./components/navigation";
 import ComingSoon from "./components/comingsoon";
 import ShareRecipe from "./components/sharerecipe";
 import Footer from "./components/footer";
+import RecipesPage from "./pages/recipepage";
 
 function App() {
   return (
     <>
       <Navigation />
-      <ComingSoon />
+      <RecipesPage />
       <ShareRecipe />
       <Footer />
     </>
