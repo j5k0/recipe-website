@@ -28,7 +28,7 @@ interface Tag {
 
 export default function Navigation() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [filterOpen, setFilterOpen] = useState(false);
   const [tags, setTags] = useState<Tag[]>([]);
