@@ -10,8 +10,5 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "multer": "^2.1.0"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.59.0"
   }
 }
