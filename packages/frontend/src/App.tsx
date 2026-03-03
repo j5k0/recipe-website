@@ -5,6 +5,7 @@ import RecipesPage from "./pages/recipepage";
 import About from "./pages/About";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
+import ShareRecipeForm from "./components/sharerecipe";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -22,7 +23,7 @@ function App() {
         <Route path="/settings" element={<Settings />} />
       </Routes>
       </main>
-      
+      <ShareRecipeForm />
       <Footer />
       </div>
     </>
