@@ -21,79 +21,21 @@ const TAG_EMOJIS: Record<string, string> = {
   Quick: "⚡",
 };
 
-interface Recipe {
-  id: string;
-  title: string;
-  description: string;
-  image: string | null;
-  tags?: { id: string; name: string }[];
-}
-
 interface Tag {
   id: string;
   name: string;
-}
-
-function SearchResultItem({
-  recipe,
-  onClick,
-}: {
-  recipe: Recipe;
-  onClick: () => void;
-}) {
-  const [imgError, setImgError] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left group"
-    >
-      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-        {recipe.image && !imgError ? (
-          <img
-            src={recipe.image}
-            alt={recipe.title}
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-base">
-            🍽
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate group-hover:text-gray-600 transition-colors">
-          {recipe.title}
-        </p>
-        {recipe.description && (
-          <p className="text-xs text-gray-400 truncate">{recipe.description}</p>
-        )}
-      </div>
-      {recipe.tags && recipe.tags.length > 0 && (
-        <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
-          {TAG_EMOJIS[recipe.tags[0].name] ?? ""} {recipe.tags[0].name}
-        </span>
-      )}
-    </button>
-  );
 }
 
 export default function Navigation() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const activeTags = searchParams.getAll("tag");
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(api("/recipes"))
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setAllRecipes)
-      .catch(() => {});
     fetch(api("/tags"))
       .then((r) => (r.ok ? r.json() : []))
       .then(setTags)
@@ -141,17 +83,6 @@ export default function Navigation() {
     next.delete("tag");
     navigate({ pathname: "/", search: next.toString() });
   };
-
-  const searchResults =
-    search.trim().length > 0
-      ? allRecipes
-          .filter(
-            (r) =>
-              r.title?.toLowerCase().includes(search.toLowerCase()) ||
-              r.description?.toLowerCase().includes(search.toLowerCase()),
-          )
-          .slice(0, 6)
-      : [];
 
   const iconNavClass = ({ isActive }: { isActive: boolean }) =>
     `w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
@@ -202,17 +133,12 @@ export default function Navigation() {
               placeholder="Search recipes..."
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => {
-                setSearchFocused(true);
-                setFilterOpen(false);
-              }}
               className="w-full pl-10 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
             />
             {/* Filter button */}
             <button
               onClick={() => {
                 setFilterOpen((o) => !o);
-                setSearchFocused(false);
               }}
               className="absolute right-3.5 top-1/2 -translate-y-1/2"
             >
@@ -240,37 +166,6 @@ export default function Navigation() {
               </span>
             </button>
           </div>
-
-          {/* Search dropdown */}
-          {searchFocused && search.trim().length > 0 && (
-            <div
-              className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden z-50"
-              style={{ animation: "fadeSlideDown 180ms ease" }}
-            >
-              {searchResults.length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-gray-400">
-                  No recipes found for "{search}"
-                </p>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {searchResults.map((r) => (
-                    <SearchResultItem
-                      key={r.id}
-                      recipe={r}
-                      onClick={() => {
-                        setSearchFocused(false);
-                        setSearch("");
-                        const next = new URLSearchParams(searchParams);
-                        next.delete("search");
-                        next.set("open", r.id);
-                        navigate({ pathname: "/", search: next.toString() });
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Filter dropdown */}
           {filterOpen && (
