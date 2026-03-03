@@ -363,7 +363,8 @@ export default function RecipesPage() {
       r.title?.toLowerCase().includes(q) ||
       r.description?.toLowerCase().includes(q);
     const matchTag =
-      activeTags.length === 0 || r.tags?.some((t) => activeTags.includes(t.id));
+      activeTags.length === 0 ||
+      activeTags.every((tagId) => r.tags?.some((t) => t.id === tagId));
     return matchSearch && matchTag;
   });
 
