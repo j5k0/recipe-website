@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import ShareRecipe from "../components/sharerecipe";
+import { useSearchParams } from "react-router-dom";
 
 interface Tag {
   id: string;
@@ -160,7 +160,6 @@ function RecipeModal({
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Small delay so CSS transition actually fires
     const t = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
     fetch(api(`/recipes/${recipe.id}/ingredients`))
@@ -200,8 +199,7 @@ function RecipeModal({
         backgroundColor: visible ? "rgba(0,0,0,0.32)" : "rgba(0,0,0,0)",
         backdropFilter: visible ? "blur(6px)" : "blur(0px)",
         WebkitBackdropFilter: visible ? "blur(6px)" : "blur(0px)",
-        transition:
-          "background-color 280ms ease, backdrop-filter 280ms ease, -webkit-backdrop-filter 280ms ease",
+        transition: "background-color 280ms ease, backdrop-filter 280ms ease",
       }}
     >
       <div
@@ -214,7 +212,6 @@ function RecipeModal({
           transition: "opacity 280ms ease, transform 280ms ease",
         }}
       >
-        {/* Close button */}
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all"
@@ -234,7 +231,6 @@ function RecipeModal({
           </svg>
         </button>
 
-        {/* Hero image */}
         <div className="aspect-[16/7] overflow-hidden rounded-t-2xl bg-gray-50">
           {recipe.image && !imgError ? (
             <img
@@ -250,7 +246,6 @@ function RecipeModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-8">
           {recipe.tags && recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
@@ -265,11 +260,9 @@ function RecipeModal({
               ))}
             </div>
           )}
-
           <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1">
             {recipe.title}
           </h2>
-
           {recipe.created_at && (
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-5">
               {new Date(recipe.created_at).toLocaleDateString("en-US", {
@@ -279,20 +272,16 @@ function RecipeModal({
               })}
             </p>
           )}
-
           <div className="h-px bg-gray-100 mb-5" />
-
           {recipe.description && (
             <p className="text-gray-500 leading-relaxed mb-6 text-sm">
               {recipe.description}
             </p>
           )}
-
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3">
             <span>Ingredients</span>
             <span className="flex-1 h-px bg-gray-100" />
           </h4>
-
           {loadingIng ? (
             <div className="space-y-2">
               {[1, 2, 3, 4].map((i) => (
@@ -335,6 +324,11 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Recipe | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const search = searchParams.get("search") ?? "";
+  const activeTags = searchParams.getAll("tag");
+  const openId = searchParams.get("open");
 
   useEffect(() => {
     fetch(api("/recipes"))
@@ -346,6 +340,32 @@ export default function RecipesPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Auto-open modal when ?open=id is set (from nav search click)
+  useEffect(() => {
+    if (openId && recipes.length > 0) {
+      const recipe = recipes.find((r) => r.id === openId);
+      if (recipe) setSelected(recipe);
+    }
+  }, [openId, recipes]);
+
+  const handleCloseModal = () => {
+    setSelected(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete("open");
+    setSearchParams(next, { replace: true });
+  };
+
+  const filtered = recipes.filter((r) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      !q ||
+      r.title?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q);
+    const matchTag =
+      activeTags.length === 0 || r.tags?.some((t) => activeTags.includes(t.id));
+    return matchSearch && matchTag;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
@@ -377,7 +397,7 @@ export default function RecipesPage() {
               <CardSkeleton key={i} />
             ))}
           </div>
-        ) : recipes.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-2xl mb-4">
               🍃
@@ -386,12 +406,14 @@ export default function RecipesPage() {
               No recipes found
             </h3>
             <p className="text-sm text-gray-400">
-              No recipes have been added yet
+              {search || activeTags.length > 0
+                ? "Try changing your search or filters"
+                : "No recipes have been added yet"}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {recipes.map((r, i) => (
+            {filtered.map((r, i) => (
               <RecipeCard
                 key={r.id}
                 recipe={r}
@@ -403,11 +425,7 @@ export default function RecipesPage() {
         )}
       </div>
 
-      <ShareRecipe />
-
-      {selected && (
-        <RecipeModal recipe={selected} onClose={() => setSelected(null)} />
-      )}
+      {selected && <RecipeModal recipe={selected} onClose={handleCloseModal} />}
     </div>
   );
 }
