@@ -48,7 +48,6 @@ export default function Navigation() {
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
       ) {
-        setSearchFocused(false);
         setFilterOpen(false);
       }
     };
