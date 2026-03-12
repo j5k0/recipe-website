@@ -105,7 +105,7 @@ function FeaturedCard({
       className="group text-left bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 focus:outline-none"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="aspect-[4/3] overflow-hidden relative bg-gray-50">
+      <div className="aspect-4/3 overflow-hidden relative bg-gray-50">
         {recipe.image && !imgError ? (
           <img
             src={recipe.image}
@@ -422,13 +422,14 @@ export default function Home() {
             />
             <div className="relative">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
-                Share your passion
+                Ready to find your next favorite dish?
               </p>
               <h2
                 className="text-2xl font-semibold text-white leading-snug"
-                style={{ maxWidth: 380 }}
+                style={{ maxWidth: 550 }}
               >
-                Have a recipe the world needs to taste?
+                Dive into our collection of community recipes and start cooking
+                something amazing today!
               </h2>
             </div>
             <button
