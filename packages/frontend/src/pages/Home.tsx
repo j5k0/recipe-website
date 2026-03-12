@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const TAG_EMOJIS: Record<string, string> = {
@@ -301,7 +301,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="flex-shrink-0 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-full hover:bg-gray-700 transition-colors"
+              className="shrink-0 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-full hover:bg-gray-700 transition-colors"
             >
               Search
             </button>
@@ -434,7 +434,7 @@ export default function Home() {
             </div>
             <button
               onClick={() => navigate("/recipes")}
-              className="flex-shrink-0 px-7 py-3.5 bg-white text-gray-900 font-semibold text-sm rounded-full hover:bg-gray-100 transition-colors relative"
+              className="shrink-0 px-7 py-3.5 bg-white text-gray-900 font-semibold text-sm rounded-full hover:bg-gray-100 transition-colors relative"
             >
               Browse recipes
             </button>
