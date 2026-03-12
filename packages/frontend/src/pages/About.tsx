@@ -1,3 +1,5 @@
+import { Logo } from "../assets";
+
 export default function About() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
@@ -5,18 +7,7 @@ export default function About() {
         {/* Hero */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-4 text-center">
           <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
-              <line x1="6" y1="17" x2="18" y2="17" />
-            </svg>
+            <Logo className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">
             Komanda26
