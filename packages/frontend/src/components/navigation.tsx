@@ -1,18 +1,40 @@
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { Logo, LensIcon, FilterIcon, InformationIcon, SettingsIcon, AccountIcon, UserIcon } from "../assets";
+import {
+  Logo,
+  LensIcon,
+  FilterIcon,
+  InformationIcon,
+  SettingsIcon,
+  AccountIcon,
+  UserIcon,
+} from "../assets";
 import LoginModal from "./loginmodal.tsx";
 
-const API_BASE = (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "http://localhost:3001";
+const API_BASE =
+  (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
+  "http://localhost:3001";
 const api = (path: string) => `${API_BASE}/api${path}`;
 
 const TAG_EMOJIS: Record<string, string> = {
-  Meat: "🥩", Salad: "🥗", Vegetarian: "🥦", Seafood: "🐟",
-  Pasta: "🍝", Soup: "🍲", Dessert: "🍰", Breakfast: "🍳",
-  Pizza: "🍕", Vegan: "🌱", Spicy: "🌶️", Quick: "⚡",
+  Meat: "🥩",
+  Salad: "🥗",
+  Vegetarian: "🥦",
+  Seafood: "🐟",
+  Pasta: "🍝",
+  Soup: "🍲",
+  Dessert: "🍰",
+  Breakfast: "🍳",
+  Pizza: "🍕",
+  Vegan: "🌱",
+  Spicy: "🌶️",
+  Quick: "⚡",
 };
 
-interface Tag { id: string; name: string; }
+interface Tag {
+  id: string;
+  name: string;
+}
 
 export default function Navigation() {
   const navigate = useNavigate();
@@ -25,10 +47,12 @@ export default function Navigation() {
   const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(api("/tags")).then((r) => r.ok ? r.json() : []).then(setTags).catch(() => {});
+    fetch(api("/tags"))
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setTags)
+      .catch(() => {});
   }, []);
 
-  // Close filter on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
@@ -39,11 +63,13 @@ export default function Navigation() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Close filter on any key press
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (filterOpen) setFilterOpen(false);
-      if (e.key === "Escape") { setFilterOpen(false); setLoginOpen(false); }
+      if (e.key === "Escape") {
+        setFilterOpen(false);
+        setLoginOpen(false);
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -55,48 +81,55 @@ export default function Navigation() {
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
-    // Close filter when typing
     if (filterOpen) setFilterOpen(false);
     const next = new URLSearchParams(searchParams);
     if (val.trim()) next.set("search", val.trim());
     else next.delete("search");
-    navigate({ pathname: "/", search: next.toString() }, { replace: true });
+    navigate(
+      { pathname: "/recipes", search: next.toString() },
+      { replace: true },
+    );
   };
 
   const toggleTag = (id: string) => {
     const next = new URLSearchParams(searchParams);
     next.delete("tag");
-    const newTags = activeTags.includes(id) ? activeTags.filter((t) => t !== id) : [...activeTags, id];
+    const newTags = activeTags.includes(id)
+      ? activeTags.filter((t) => t !== id)
+      : [...activeTags, id];
     newTags.forEach((t) => next.append("tag", t));
-    navigate({ pathname: "/", search: next.toString() });
+    navigate({ pathname: "/recipes", search: next.toString() });
   };
 
   const clearTags = () => {
     const next = new URLSearchParams(searchParams);
     next.delete("tag");
-    navigate({ pathname: "/", search: next.toString() });
+    navigate({ pathname: "/recipes", search: next.toString() });
   };
 
   const iconNavClass = ({ isActive }: { isActive: boolean }) =>
     `w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
-      isActive ? "bg-gray-100 text-gray-900" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+      isActive
+        ? "bg-gray-100 text-gray-900"
+        : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
-
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 shrink-0">
             <Logo className="w-7 h-7 text-gray-900" />
-            <span className="text-lg font-semibold text-gray-900 tracking-tight">Komanda26</span>
+            <span className="text-lg font-semibold text-gray-900 tracking-tight">
+              Komanda26
+            </span>
           </NavLink>
 
           {/* Search + Filter */}
           <div className="flex-1 max-w-2xl mx-auto relative">
             <div className="relative">
-              <LensIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"/>
+              <LensIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search recipes..."
@@ -104,13 +137,17 @@ export default function Navigation() {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
               />
-              {/* Filter button */}
-              <div ref={filterRef} className="absolute right-3.5 top-1/2 -translate-y-1/2">
+              <div
+                ref={filterRef}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2"
+              >
                 <button
                   onClick={() => setFilterOpen((o) => !o)}
                   className="relative block"
                 >
-                  <span className={`block transition-colors ${filterOpen || activeTags.length > 0 ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
+                  <span
+                    className={`block transition-colors ${filterOpen || activeTags.length > 0 ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}
+                  >
                     <FilterIcon className="w-4 h-4" />
                     {activeTags.length > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-gray-900 rounded-full text-[8px] text-white flex items-center justify-center font-bold leading-none">
@@ -119,24 +156,37 @@ export default function Navigation() {
                     )}
                   </span>
                 </button>
-
-                {/* Filter dropdown — inside filterRef so outside clicks close it */}
                 {filterOpen && (
-                  <div className="absolute top-full right-0 mt-4 w-72 bg-white border border-gray-100 rounded-2xl shadow-lg z-50 p-4" style={{ animation: "fadeSlideDown 180ms ease" }}>
+                  <div
+                    className="absolute top-full right-0 mt-4 w-72 bg-white border border-gray-100 rounded-2xl shadow-lg z-50 p-4"
+                    style={{ animation: "fadeSlideDown 180ms ease" }}
+                  >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Filter by tag</span>
+                      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                        Filter by tag
+                      </span>
                       {activeTags.length > 0 && (
-                        <button onClick={clearTags} className="text-xs text-gray-400 hover:text-gray-900 transition-colors">Clear all</button>
+                        <button
+                          onClick={clearTags}
+                          className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
+                        >
+                          Clear all
+                        </button>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {tags.map((t) => {
                         const active = activeTags.includes(t.id);
                         return (
-                          <button key={t.id} onClick={() => toggleTag(t.id)}
+                          <button
+                            key={t.id}
+                            onClick={() => toggleTag(t.id)}
                             className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
-                              active ? "bg-gray-900 border-gray-900 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
-                            }`}>
+                              active
+                                ? "bg-gray-900 border-gray-900 text-white"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                            }`}
+                          >
                             {TAG_EMOJIS[t.name] ?? ""} {t.name}
                           </button>
                         );
@@ -151,17 +201,14 @@ export default function Navigation() {
           {/* Right icons */}
           <div className="flex items-center gap-1 shrink-0">
             <NavLink to="/about" title="About" className={iconNavClass}>
-              <InformationIcon className="w-[18px] h-[18px]" />
+              <InformationIcon className="w-4.5 h-4.5" />
             </NavLink>
-
             <NavLink to="/settings" title="Settings" className={iconNavClass}>
-              <SettingsIcon className="w-[18px] h-[18]px" />
+              <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
-
             <NavLink to="/account" title="Account" className={iconNavClass}>
-              <AccountIcon className="w-[18px] h-[18px]" />
+              <AccountIcon className="w-4.5 h-4.5" />
             </NavLink>
-
             <button
               onClick={() => setLoginOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1"
@@ -180,7 +227,6 @@ export default function Navigation() {
         `}</style>
       </nav>
 
-      {/* Login modal */}
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
     </>
   );

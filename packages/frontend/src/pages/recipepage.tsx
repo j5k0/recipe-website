@@ -31,7 +31,7 @@ function timeAgo(dateStr: string) {
 function CardSkeleton() {
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm animate-pulse">
-      <div className="aspect-[4/3] bg-gray-100" />
+      <div className="aspect-4/3 bg-gray-100" />
       <div className="p-5 space-y-3">
         <div className="flex gap-2">
           <div className="h-5 w-16 bg-gray-100 rounded-full" />
@@ -53,7 +53,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
       className="group text-left bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <div className="aspect-[4/3] overflow-hidden relative bg-gray-50">
+      <div className="aspect-4/3 overflow-hidden relative bg-gray-50">
         {recipe.image && !imgError ? (
           <img src={recipe.image} alt={recipe.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -144,7 +144,7 @@ function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void 
           <CloseIcon className="w-4 h-4" />
         </button>
 
-        <div className="aspect-[16/7] overflow-hidden rounded-t-2xl bg-gray-50">
+        <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50">
           {recipe.image && !imgError ? (
             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
           ) : (
