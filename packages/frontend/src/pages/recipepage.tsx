@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -84,9 +85,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         )}
         <div className="mt-4 flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200">
           <span className="uppercase tracking-widest font-medium">View recipe</span>
-          <svg className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
         </div>
       </div>
     </button>
@@ -142,9 +141,7 @@ function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void 
         }}
       >
         <button onClick={handleClose} className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <CloseIcon className="w-4 h-4" />
         </button>
 
         <div className="aspect-[16/7] overflow-hidden rounded-t-2xl bg-gray-50">
@@ -254,9 +251,7 @@ export default function RecipesPage() {
       {error && (
         <div className="max-w-7xl mx-auto px-6 pt-6">
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
+            <WarningIcon className="w-4 h-4 shrink-0" />
             Cannot connect to backend — {error}
           </div>
         </div>
