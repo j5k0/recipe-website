@@ -201,13 +201,13 @@ export default function Navigation() {
           {/* Right icons */}
           <div className="flex items-center gap-1 shrink-0">
             <NavLink to="/about" title="About" className={iconNavClass}>
-              <InformationIcon className="w-[18px] h-[18px]" />
+              <InformationIcon className="w-4.5 h-4.5" />
             </NavLink>
             <NavLink to="/settings" title="Settings" className={iconNavClass}>
-              <SettingsIcon className="w-[18px] h-[18px]" />
+              <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
             <NavLink to="/account" title="Account" className={iconNavClass}>
-              <AccountIcon className="w-[18px] h-[18px]" />
+              <AccountIcon className="w-4.5 h-4.5" />
             </NavLink>
             <button
               onClick={() => setLoginOpen(true)}
