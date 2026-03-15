@@ -110,18 +110,18 @@ export default function Navigation() {
   const iconNavClass = ({ isActive }: { isActive: boolean }) =>
     `w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
       isActive
-        ? "bg-gray-100 text-gray-900"
-        : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+        ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
+        : "text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
     }`;
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm dark:bg-gray-900 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 shrink-0">
-            <Logo className="w-7 h-7 text-gray-900" />
-            <span className="text-lg font-semibold text-gray-900 tracking-tight">
+            <Logo className="w-7 h-7 text-gray-900 dark:text-white" />
+            <span className="text-lg font-semibold text-gray-900 tracking-tight dark:text-white">
               Komanda26
             </span>
           </NavLink>
@@ -135,7 +135,8 @@ export default function Navigation() {
                 placeholder="Search recipes..."
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
+                className="w-full pl-10 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
+                 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
               />
               <div
                 ref={filterRef}
@@ -146,7 +147,7 @@ export default function Navigation() {
                   className="relative block"
                 >
                   <span
-                    className={`block transition-colors ${filterOpen || activeTags.length > 0 ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}
+                    className={`block transition-colors ${filterOpen || activeTags.length > 0 ? "text-gray-900 dark:text-white" : "text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}
                   >
                     <FilterIcon className="w-4 h-4" />
                     {activeTags.length > 0 && (
@@ -158,17 +159,17 @@ export default function Navigation() {
                 </button>
                 {filterOpen && (
                   <div
-                    className="absolute top-full right-0 mt-4 w-72 bg-white border border-gray-100 rounded-2xl shadow-lg z-50 p-4"
+                    className="absolute top-full right-0 mt-4 w-72 bg-white border border-gray-100 rounded-2xl shadow-lg z-50 p-4 dark:bg-gray-800 dark:border-gray-700"
                     style={{ animation: "fadeSlideDown 180ms ease" }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
                         Filter by tag
                       </span>
                       {activeTags.length > 0 && (
                         <button
                           onClick={clearTags}
-                          className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
+                          className="text-xs text-gray-400 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-white"
                         >
                           Clear all
                         </button>
@@ -183,8 +184,8 @@ export default function Navigation() {
                             onClick={() => toggleTag(t.id)}
                             className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
                               active
-                                ? "bg-gray-900 border-gray-900 text-white"
-                                : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                                ? "bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-gray-900"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400"
                             }`}
                           >
                             {TAG_EMOJIS[t.name] ?? ""} {t.name}
@@ -211,7 +212,8 @@ export default function Navigation() {
             </NavLink>
             <button
               onClick={() => setLoginOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1 
+                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               <UserIcon className="w-4 h-4" />
               Login

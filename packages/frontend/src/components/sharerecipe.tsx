@@ -80,28 +80,29 @@ export default function ShareRecipeForm() {
   };
 
   return (
-    <section className="bg-gray-50 py-16">
+    <section className="bg-gray-50 py-16 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-3xl font-semibold text-gray-900 mb-2 dark:text-white">
             Share Your Recipe
           </h2>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-300 dark:text-gray-300">
             Have a delicious recipe? Share it with our community!
           </p>
         </div>
 
         {submitted && (
-          <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm text-center">
+          <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm text-center dark:bg-green-950/40 dark:border-green-900 dark:text-green-300">
             🎉 Recipe submitted successfully!
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-8 dark:bg-gray-800 dark:border dark:border-gray-700">
           {!isExpanded ? (
             <button
               onClick={() => setIsExpanded(true)}
-              className="w-full py-4 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+              className="w-full py-4 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium
+               dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               <UploadIcon className="w-5 h-5" />
               Start Sharing
@@ -110,7 +111,7 @@ export default function ShareRecipeForm() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   Recipe Image
                 </label>
                 <div className="flex gap-4">
@@ -133,9 +134,10 @@ export default function ShareRecipeForm() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors flex flex-col items-center justify-center gap-2 text-gray-500 text-sm"
+                    className="flex-1 h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors flex flex-col items-center justify-center gap-2 text-gray-500 text-sm
+                     dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:bg-gray-900"
                   >
-                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                  <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-400" />
                     {imagePreview ? "Change Image" : "Upload Image"}
                   </button>
                   <input
@@ -146,7 +148,7 @@ export default function ShareRecipeForm() {
                     className="hidden"
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-300">
                   Image will be automatically resized to fit
                 </p>
               </div>
@@ -155,7 +157,7 @@ export default function ShareRecipeForm() {
               <div>
                 <label
                   htmlFor="recipe-title"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 >
                   Recipe Title
                 </label>
@@ -164,7 +166,8 @@ export default function ShareRecipeForm() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 text-gray-900 placeholder:text-gray-400 transition-all"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 bg-white text-gray-900 placeholder:text-gray-400 transition-all
+                   dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
                   placeholder="My Amazing Recipe"
                   required
                 />
@@ -174,7 +177,7 @@ export default function ShareRecipeForm() {
               <div>
                 <label
                   htmlFor="recipe-description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 >
                   Description
                 </label>
@@ -183,7 +186,8 @@ export default function ShareRecipeForm() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 resize-none text-gray-900 placeholder:text-gray-400 transition-all"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 resize-none bg-white text-gray-900 placeholder:text-gray-400 transition-all
+                   dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
                   placeholder="Tell us about your recipe..."
                   required
                 />
@@ -191,7 +195,7 @@ export default function ShareRecipeForm() {
 
               {/* Ingredients */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   Ingredients
                 </label>
                 <div className="space-y-2">
@@ -203,14 +207,15 @@ export default function ShareRecipeForm() {
                         onChange={(e) =>
                           updateIngredient(index, e.target.value)
                         }
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 text-gray-900 placeholder:text-gray-400 transition-all"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 text-gray-900 placeholder:text-gray-400 transition-all
+                         dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
                         placeholder="e.g., 2 cups flour"
                       />
                       {ingredients.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeIngredient(index)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-400"
                         >
                         <CloseIcon className="w-5 h-5" />
                         </button>
@@ -221,7 +226,7 @@ export default function ShareRecipeForm() {
                 <button
                   type="button"
                   onClick={addIngredient}
-                  className="mt-2 text-sm text-gray-900 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                  className="mt-2 text-sm text-gray-900 hover:text-gray-600 flex items-center gap-1 transition-colors dark:text-white dark:hover:text-gray-300"
                 >
                 <AddIcon className="w-4 h-4" />
                   Add Ingredient
@@ -230,10 +235,10 @@ export default function ShareRecipeForm() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                   Tags
                   {selectedTags.length > 0 && (
-                    <span className="ml-2 text-xs text-gray-400 font-normal">
+                    <span className="ml-2 text-xs text-gray-400 font-normal dark:text-gray-400">
                       {selectedTags.length} selected
                     </span>
                   )}
@@ -248,8 +253,8 @@ export default function ShareRecipeForm() {
                         onClick={() => toggleTag(label)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
                           active
-                            ? "bg-gray-900 text-white border-gray-900"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                            ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-400 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:border-gray-400"
                         }`}
                       >
                         <span>{emoji}</span>
@@ -264,7 +269,7 @@ export default function ShareRecipeForm() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                 >
                   Submit Recipe
                 </button>
@@ -273,7 +278,8 @@ export default function ShareRecipeForm() {
                   onClick={() => {
                       setIsExpanded(false);
                   }}
-                  className="px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700"
+                  className="px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700 dark:text-gray-300
+                   dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>

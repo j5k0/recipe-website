@@ -45,7 +45,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
       }}
     >
       <div
-        className="relative bg-white rounded-2xl w-full max-w-sm shadow-xl border border-gray-100 overflow-hidden"
+        className="relative bg-white rounded-2xl w-full max-w-sm shadow-xl border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.97)",
@@ -53,28 +53,31 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
         }}
       >
         {/* Close */}
-        <button onClick={handleClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all">
+        <button onClick={handleClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all
+         dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
           <CloseIcon className="w-4 h-4" />
         </button>
 
         {/* Header */}
         <div className="px-8 pt-8 pb-6">
           <div className="flex items-center gap-2 mb-6">
-            <Logo className="w-6 h-6 text-gray-900" />
-            <span className="text-base font-semibold text-gray-900">Komanda26</span>
+            <Logo className="w-6 h-6 text-gray-900 dark:text-white" />
+            <span className="text-base font-semibold text-gray-900 dark:text-white">Komanda26</span>
           </div>
 
           {/* Tabs */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-6 dark:bg-gray-700">
             <button
               onClick={() => setTab("login")}
-              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
+                "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
               Sign in
             </button>
             <button
               onClick={() => setTab("register")}
-              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
+                "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
               Register
             </button>
@@ -84,43 +87,46 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           <form onSubmit={handleSubmit} className="space-y-3">
             {tab === "register" && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
+                   dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
                   required
                 />
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
+                 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Password</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all"
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
+                 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
                 required
               />
             </div>
 
             {tab === "login" && (
               <div className="text-right">
-                <button type="button" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                <button type="button" className="text-xs text-gray-400 hover:text-gray-700 transition-colors  dark:text-gray-300 dark:hover:text-white">
                   Forgot password?
                 </button>
               </div>
@@ -128,7 +134,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1"
+              className="w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               {tab === "login" ? "Sign in" : "Create account"}
             </button>
