@@ -2,13 +2,16 @@ import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, } from "./db/recipes";
+import { createUser } from "./db/user";
+import jwt from 'jsonwebtoken';
 
 const upload = multer(); 
-const router = express.Router();
+const recipeRouter = express.Router();
+const loginRouter = express.Router();
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
-router.post("/recipes", upload.single("image"), async (req, res) => {
+recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
   try {
     const { title, description } = req.body;
     const ingredients = [].concat(req.body.ingredients || []);
@@ -51,7 +54,7 @@ router.post("/recipes", upload.single("image"), async (req, res) => {
 
 // ── Nauji routes ──────────────────────────────────────────────
 
-router.get("/recipes", async (req, res) => {
+recipeRouter.get("/recipes", async (req, res) => {
   try {
     const recipes = await getAllRecipes();
     res.json(recipes);
@@ -61,7 +64,7 @@ router.get("/recipes", async (req, res) => {
   }
 });
 
-router.get("/recipes/:id/ingredients", async (req, res) => {
+recipeRouter.get("/recipes/:id/ingredients", async (req, res) => {
   try {
     const ingredients = await getRecipeIngredients(req.params.id);
     res.json(ingredients);
@@ -71,7 +74,7 @@ router.get("/recipes/:id/ingredients", async (req, res) => {
   }
 });
 
-router.get("/tags", async (req, res) => {
+recipeRouter.get("/tags", async (req, res) => {
   try {
     const tags = await getAllTags();
     res.json(tags);
@@ -81,4 +84,18 @@ router.get("/tags", async (req, res) => {
   }
 });
 
-export default router;
+// Login, register 
+
+loginRouter.post('/register', async (req, res) => {
+    try{
+        const { email, name, password } = req.body;
+        const result = await createUser(name, email, password);
+        res.status(201).json({ message: "User created" });
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({ error: "Failed to create user" });
+    }
+})
+
+export default {recipeRouter, loginRouter};
