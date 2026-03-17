@@ -5,6 +5,7 @@ import {
   LensIcon,
   FilterIcon,
   InformationIcon,
+  RecipesIcon,
   SettingsIcon,
   AccountIcon,
   UserIcon,
@@ -201,6 +202,9 @@ export default function Navigation() {
 
           {/* Right icons */}
           <div className="flex items-center gap-1 shrink-0">
+            <NavLink to="/recipes" title="Recipes" className={iconNavClass}>
+              <RecipesIcon className="w-4.5 h-4.5" />
+            </NavLink>
             <NavLink to="/about" title="About" className={iconNavClass}>
               <InformationIcon className="w-4.5 h-4.5" />
             </NavLink>
