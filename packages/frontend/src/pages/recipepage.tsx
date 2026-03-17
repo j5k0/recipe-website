@@ -134,7 +134,7 @@ function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void 
       }}
     >
       <div
-        className="relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
+        className="modal-scroll relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.97)",
