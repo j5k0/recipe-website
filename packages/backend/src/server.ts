@@ -2,12 +2,18 @@ import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, } from "./db/recipes";
-import { createUser } from "./db/user";
+import { createUser, findUser } from "./db/user";
 import jwt from 'jsonwebtoken';
+import { authenticateToken } from "./auth";
+import bcrypt from "bcrypt";
+import { User, JwtPayload, AuthRequest } from "./types";
+import { Router, Request, Response } from "express";
 
 const upload = multer(); 
 const recipeRouter = express.Router();
 const loginRouter = express.Router();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
@@ -95,6 +101,38 @@ loginRouter.post('/register', async (req, res) => {
     catch(err){
         console.error(err);
         res.status(500).json({ error: "Failed to create user" });
+    }
+})
+
+loginRouter.post("/login", async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const user = await findUser(email);
+    if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const payload: JwtPayload = { user_name: user.user_name, email: user.email };
+    const token = jwt.sign(payload, JWT_SECRET as string, { expiresIn: "1h" });
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict"
+    });
+    res.json({ message: "Logged in" });
+});
+
+// for testing purposes
+
+loginRouter.get("/whoami", authenticateToken, (req: AuthRequest, res: Response) => {
+    if(req.user){
+        res.json({
+            user_name: req.user.user_name,
+            email: req.user.email
+        });
     }
 })
 

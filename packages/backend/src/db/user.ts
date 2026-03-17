@@ -1,4 +1,5 @@
 import { pool } from "./pool";
+import { User } from "../types";
 import bcrypt from 'bcrypt';
 
 export async function createUser(
@@ -12,5 +13,15 @@ export async function createUser(
         [email, user, hashedPassword]
     );
   return rows[0];
+}
+
+export async function findUser(
+    email: string,
+): Promise<User> {
+    const { rows } = await pool.query<User>(
+        'SELECT email, user_name, password_hash FROM users WHERE email = $1;',
+        [email]
+    );
+    return { email: rows[0].email, user_name: rows[0].user_name, password_hash: rows[0].password_hash } as User;
 }
 

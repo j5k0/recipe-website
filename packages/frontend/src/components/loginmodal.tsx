@@ -43,6 +43,20 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
         console.log("Account creation success");
   }
 
+  const handleLogin = async() => {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/auth/login', {
+          method: 'POST',
+          credentials: "include",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+      });
+      if(res.ok){
+          console.log("Login success");
+      }
+      else
+          console.log("Login failure");
+  }
+
   return (
     <div
       ref={overlayRef}
@@ -148,6 +162,9 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               onClick= { () => {
                   if(tab === "register"){
                       handleRegister();
+                  }
+                  else if(tab === "login"){
+                      handleLogin();
                   }
               }}
               className="w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
