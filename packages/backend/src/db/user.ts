@@ -17,11 +17,13 @@ export async function createUser(
 
 export async function findUser(
     email: string,
-): Promise<User> {
+){
     const { rows } = await pool.query<User>(
         'SELECT email, user_name, password_hash FROM users WHERE email = $1;',
         [email]
     );
-    return { email: rows[0].email, user_name: rows[0].user_name, password_hash: rows[0].password_hash } as User;
+    if(rows[0])
+        return { email: rows[0].email, user_name: rows[0].user_name, password_hash: rows[0].password_hash } as User;
+    else return;
 }
 
