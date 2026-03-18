@@ -1,6 +1,20 @@
 import { ExpandArrow } from "../assets";
+import { useEffect, useState } from "react";
 
 export default function Account() {
+    const [user, setUser] = useState<{user_name: string, email: string} | null>(null);
+
+    useEffect(() => {
+        fetch(import.meta.env.VITE_BACKEND_URL + '/auth/whoami', {
+            credentials: "include",
+        })
+        .then(res => res.json())
+        .then(data => setUser(data))
+        .catch(() => {});
+        if(!user)
+            setUser({user_name: "", email: ""})
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16 dark:bg-gray-900">
       <div className="max-w-2xl mx-auto px-6 py-12">
@@ -22,8 +36,8 @@ export default function Account() {
               K
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-lg dark:text-white">Komanda26</p>
-              <p className="text-sm text-gray-400 dark:text-gray-300">komanda26@example.com</p>
+              <p className="font-semibold text-gray-900 text-lg dark:text-white">{user?.user_name}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-300">{user?.email}</p>
             </div>
             <button className="ml-auto text-sm text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-4 py-1.5 rounded-full transition-all
              dark:text-gray-300 dark:border-gray-600 dark:hover:text-white dark:hover:border-gray-400 dark:hover:bg-gray-700">

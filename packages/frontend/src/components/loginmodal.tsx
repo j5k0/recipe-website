@@ -7,6 +7,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [loginState, setLoginState] = useState<"fail" | "success" | "unknown">("unknown");
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +32,59 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
     // TODO: connect to auth
     console.log(tab, { email, password, name });
   };
+
+  const handleRegister = async () => {
+      try{
+          const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, name, password }),
+          });
+          if(res.ok){
+              setLoginState("success");
+          }
+          else{
+              setLoginState("fail");
+          }
+      }
+      catch{
+        setLoginState("fail");
+      }
+  }
+
+  const handleLogin = async() => {
+      try{
+          const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/auth/login', {
+              method: 'POST',
+              credentials: "include",
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+          });
+          if(res && res.ok){
+              setLoginState("success");
+          }
+          else{
+              setLoginState("fail");
+          }
+      }
+      catch{
+          setLoginState("fail");
+      }
+  }
+
+  // TODO: surely this can be done in a better way than redeclaring the same classes multiple times
+  const loginButtonStates: Record<string, { additionalClasses: string, label: string }> = {
+      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: "Sign in"},
+      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: "Failed to sign in" },
+      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: "Success"}
+  }
+
+  const signUpButtonStates: Record<string, { additionalClasses: string, label: string }> = {
+      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: "Create account"},
+      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: "Failed to sign up" },
+      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: "Success"}
+  }
+
 
   return (
     <div
@@ -68,14 +122,20 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           {/* Tabs */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-6 dark:bg-gray-700">
             <button
-              onClick={() => setTab("login")}
+            onClick={() => (
+                setTab("login"),
+                setLoginState("unknown")
+            )}
               className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
               Sign in
             </button>
             <button
-              onClick={() => setTab("register")}
+            onClick={() => (
+                setTab("register"),
+                setLoginState("unknown")
+            )}
               className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
@@ -91,7 +151,10 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => (
+                      setName(e.target.value),
+                      setLoginState("unknown")
+                  )}
                   placeholder="Your name"
                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
                    dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
@@ -104,7 +167,10 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => (
+                    setEmail(e.target.value),
+                    setLoginState("unknown")
+                )}
                 placeholder="you@example.com"
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
                  dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
@@ -116,7 +182,10 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => (
+                    setPassword(e.target.value),
+                    setLoginState("unknown")
+                )}
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
                  dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
@@ -134,9 +203,17 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+              onClick= { () => {
+                  if(tab === "register"){
+                      handleRegister();
+                  }
+                  else if(tab === "login"){
+                      handleLogin();
+                  }
+              }}
+              className={tab === "login" ? loginButtonStates[loginState].additionalClasses : signUpButtonStates[loginState].additionalClasses }
             >
-              {tab === "login" ? "Sign in" : "Create account"}
+              {tab === "login" ? loginButtonStates[loginState].label : signUpButtonStates[loginState].label}
             </button>
           </form>
         </div>

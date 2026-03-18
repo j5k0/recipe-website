@@ -211,17 +211,17 @@ export default function Navigation() {
             <NavLink to="/settings" title="Settings" className={iconNavClass}>
               <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
-            <NavLink to="/account" title="Account" className={iconNavClass}>
-              <AccountIcon className="w-4.5 h-4.5" />
-            </NavLink>
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1 
-                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
-            >
-              <UserIcon className="w-4 h-4" />
-              Login
-            </button>
+            {(
+                <NavLink to="/account" title="Account" className={iconNavClass}>
+                    <AccountIcon className="w-4.5 h-4.5" />
+                </NavLink>
+            )}
+            {(
+                <button onClick={() => setLoginOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1 
+                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
+                    <UserIcon className="w-4 h-4" />
+                Login</button>
+            )}
           </div>
         </div>
 

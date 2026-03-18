@@ -2,13 +2,22 @@ import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, } from "./db/recipes";
+import { createUser, findUser } from "./db/user";
+import jwt from 'jsonwebtoken';
+import { authenticateToken } from "./auth";
+import bcrypt from "bcrypt";
+import { User, JwtPayload, AuthRequest } from "./types";
+import { Router, Request, Response } from "express";
 
 const upload = multer(); 
-const router = express.Router();
+const recipeRouter = express.Router();
+const loginRouter = express.Router();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
-router.post("/recipes", upload.single("image"), async (req, res) => {
+recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
   try {
     const { title, description } = req.body;
     const ingredients = [].concat(req.body.ingredients || []);
@@ -51,7 +60,7 @@ router.post("/recipes", upload.single("image"), async (req, res) => {
 
 // ── Nauji routes ──────────────────────────────────────────────
 
-router.get("/recipes", async (req, res) => {
+recipeRouter.get("/recipes", async (req, res) => {
   try {
     const recipes = await getAllRecipes();
     res.json(recipes);
@@ -61,7 +70,7 @@ router.get("/recipes", async (req, res) => {
   }
 });
 
-router.get("/recipes/:id/ingredients", async (req, res) => {
+recipeRouter.get("/recipes/:id/ingredients", async (req, res) => {
   try {
     const ingredients = await getRecipeIngredients(req.params.id);
     res.json(ingredients);
@@ -71,7 +80,7 @@ router.get("/recipes/:id/ingredients", async (req, res) => {
   }
 });
 
-router.get("/tags", async (req, res) => {
+recipeRouter.get("/tags", async (req, res) => {
   try {
     const tags = await getAllTags();
     res.json(tags);
@@ -81,4 +90,55 @@ router.get("/tags", async (req, res) => {
   }
 });
 
-export default router;
+// Login, register 
+
+loginRouter.post('/register', async (req, res) => {
+    try{
+        const { email, name, password } = req.body;
+        const result = await createUser(name, email, password);
+        if(result){
+            res.status(201).json({ message: "User created" });
+        }
+        else{
+            res.status(409).json({ error: "Email or name already exists" });
+        }
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({ error: "Failed to create user" });
+    }
+})
+
+loginRouter.post("/login", async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const user = await findUser(email);
+    if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const payload: JwtPayload = { user_name: user.user_name, email: user.email };
+    const token = jwt.sign(payload, JWT_SECRET as string, { expiresIn: "1h" });
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict"
+    });
+    res.json({ message: "Logged in" });
+});
+
+// for testing purposes
+
+loginRouter.get("/whoami", authenticateToken, (req: AuthRequest, res: Response) => {
+    if(req.user){
+        res.json({
+            user_name: req.user.user_name,
+            email: req.user.email
+        });
+    }
+})
+
+export default {recipeRouter, loginRouter};
