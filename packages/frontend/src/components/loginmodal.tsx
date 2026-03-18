@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Logo, CloseIcon } from "../assets";
-import Navigation from "./navigation";
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false);
