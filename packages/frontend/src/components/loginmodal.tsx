@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Logo, CloseIcon } from "../assets";
+import Navigation from "./navigation";
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false);
@@ -62,6 +63,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           });
           if(res && res.ok){
               setLoginState("success");
+              Navigation();
           }
           else{
               setLoginState("fail");
@@ -122,14 +124,20 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           {/* Tabs */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-6 dark:bg-gray-700">
             <button
-              onClick={() => setTab("login")}
+            onClick={() => (
+                setTab("login"),
+                setLoginState("unknown")
+            )}
               className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
               Sign in
             </button>
             <button
-              onClick={() => setTab("register")}
+            onClick={() => (
+                setTab("register"),
+                setLoginState("unknown")
+            )}
               className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
