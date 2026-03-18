@@ -1,7 +1,7 @@
 import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
-import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, } from "./db/recipes";
+import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe } from "./db/recipes";
 import { createUser, findUser } from "./db/user";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
@@ -87,6 +87,60 @@ recipeRouter.get("/tags", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch tags" });
+  }
+});
+
+recipeRouter.put("/recipes/:id", upload.single("image"), async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+    const { title, description } = req.body;
+    const ingredients = req.body.ingredients ? [].concat(req.body.ingredients) : undefined;
+    const selectedTags = req.body.selectedTags ? [].concat(req.body.selectedTags) : undefined;
+
+    let imageUrl: string | null | undefined = undefined;
+
+    // Only handle image if one was provided
+    if (req.file) {
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+
+      const { error } = await supabase.storage
+        .from("recipes")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+        });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from("recipes")
+        .getPublicUrl(fileName);
+
+      imageUrl = data.publicUrl;
+    }
+
+    const recipe = await updateRecipe(recipeId, {
+      title,
+      description,
+      ingredients,
+      selectedTags,
+      ...(imageUrl !== undefined && { image: imageUrl }),
+    });
+
+    res.json(recipe);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update recipe" });
+  }
+});
+
+recipeRouter.delete("/recipes/:id", async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+    await deleteRecipe(recipeId);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete recipe" });
   }
 });
 
