@@ -63,7 +63,6 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           });
           if(res && res.ok){
               setLoginState("success");
-              Navigation();
           }
           else{
               setLoginState("fail");
