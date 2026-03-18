@@ -125,7 +125,7 @@ loginRouter.post("/login", async (req: Request, res: Response) => {
     res.cookie("token", token, {
         httpOnly: true,
         secure: true,
-        sameSite: "None"
+        sameSite: "none"
     });
     res.json({ message: "Logged in" });
 });
