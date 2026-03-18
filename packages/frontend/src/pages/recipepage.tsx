@@ -93,20 +93,51 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
   );
 }
 
-function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void }) {
+function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { recipe: Recipe; onClose: () => void; onRecipeUpdate: (updated: Recipe) => void; onRecipeDelete: (id: string) => void }) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loadingIng, setLoadingIng] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [visible, setVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  // Edit mode state
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(recipe.title);
+  const [editDescription, setEditDescription] = useState(recipe.description);
+  const [editIngredients, setEditIngredients] = useState("");
+  const [editSelectedTags, setEditSelectedTags] = useState<string[]>([]);
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
+
+    // Fetch ingredients
     fetch(api(`/recipes/${recipe.id}/ingredients`))
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => [])
-      .then((data) => { setIngredients(data); setLoadingIng(false); });
+      .then((data) => {
+        setIngredients(data);
+        // Initialize edit ingredients as newline-separated string
+        setEditIngredients(data.map((ing: Ingredient) => ing.info).join("\n"));
+        setLoadingIng(false);
+      });
+
+    // Fetch available tags
+    fetch(api("/tags"))
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => [])
+      .then((data) => {
+        setAvailableTags(data);
+        // Initialize selected tags with current recipe tags
+        if (recipe.tags) {
+          setEditSelectedTags(recipe.tags.map(t => t.id));
+        }
+      });
+
     return () => { clearTimeout(t); document.body.style.overflow = ""; };
   }, [recipe.id]);
 
@@ -120,6 +151,89 @@ function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void 
     setVisible(false);
     setTimeout(onClose, 280);
   };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditImage(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveRecipe = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("title", editTitle);
+      formData.append("description", editDescription);
+
+      // Add ingredients
+      const ingredientsList = editIngredients.split("\n").filter(i => i.trim());
+      ingredientsList.forEach(ing => formData.append("ingredients", ing));
+
+      // Add selected tag names (not IDs)
+      const selectedTagNames = availableTags
+        .filter(tag => editSelectedTags.includes(tag.id))
+        .map(tag => tag.name);
+      selectedTagNames.forEach(tag => formData.append("selectedTags", tag));
+
+      // Add image only if changed
+      if (editImage) {
+        formData.append("image", editImage);
+      }
+
+      const response = await fetch(api(`/recipes/${recipe.id}`), {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to update recipe");
+
+      const updatedRecipe = await response.json();
+      onRecipeUpdate(updatedRecipe);
+      setEditing(false);
+      setEditImage(null);
+      setImagePreview(null);
+    } catch (err) {
+      console.error("Error saving recipe:", err);
+      alert("Failed to save recipe");
+    }
+  };
+
+  const handleDeleteRecipe = async () => {
+    if (!confirm("Are you sure you want to delete this recipe?")) return;
+
+    try {
+      const response = await fetch(api(`/recipes/${recipe.id}`), {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete recipe");
+
+      onRecipeDelete(recipe.id);
+      handleClose();
+    } catch (err) {
+      console.error("Error deleting recipe:", err);
+      alert("Failed to delete recipe");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+    setEditTitle(recipe.title);
+    setEditDescription(recipe.description);
+    setEditIngredients(ingredients.map(ing => ing.info).join("\n"));
+    setEditImage(null);
+    setImagePreview(null);
+    if (recipe.tags) {
+      setEditSelectedTags(recipe.tags.map(t => t.id));
+    }
+  };
+
+  const currentImage = imagePreview || recipe.image;
 
   return (
     <div
@@ -141,68 +255,175 @@ function RecipeModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void 
           transition: "opacity 280ms ease, transform 280ms ease",
         }}
       >
-        <button onClick={handleClose} className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all
-         dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
-          <CloseIcon className="w-4 h-4" />
-        </button>
-
-        <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
-          {recipe.image && !imgError ? (
-            <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          {editing ? (
+            <>
+              <button onClick={handleCancelEdit} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-500">🍽</div>
+            <>
+              <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600">
+                Edit
+              </button>
+              <button onClick={handleDeleteRecipe} className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors dark:bg-red-500 dark:hover:bg-red-600">
+                Delete
+              </button>
+              <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
 
-        <div className="p-8">
-          {recipe.tags && recipe.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {recipe.tags.map((t) => (
-                <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-3 py-1 rounded-full dark:text-gray-300 dark:bg-gray-700">
-                  {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
-                </span>
-              ))}
-            </div>
-          )}
-          <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
-          {recipe.created_at && (
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
-              {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          )}
-          <div className="h-px bg-gray-100 mb-5 dark:bg-gray-700" />
-          {recipe.description && (
-            <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
-          )}
-          <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
-            <span>Ingredients</span>
-            <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
-          </h4>
-          {loadingIng ? (
-            <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
-            </div>
-          ) : ingredients.length === 0 ? (
-            <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {ingredients.map((ing, i) => (
-                <li key={ing.id}
-                  className="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 transition-colors px-4 py-2.5 rounded-xl text-sm text-gray-600
-                   dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
-                  style={{
-                    opacity: visible ? 1 : 0,
-                    transform: visible ? "translateX(0)" : "translateX(-8px)",
-                    transition: `opacity 220ms ease ${180 + i * 35}ms, transform 220ms ease ${180 + i * 35}ms`,
-                  }}
+        {editing ? (
+          <>
+            {/* Edit Mode Image */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700 w-full hover:opacity-80 transition-opacity cursor-pointer relative"
+            >
+              {currentImage ? (
+                <img src={currentImage} alt={editTitle} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-500">🍽</div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+                <span className="text-white text-sm font-medium">Click to change image</span>
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+
+            <div className="p-8">
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full text-2xl font-semibold text-gray-900 mb-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="Recipe title"
+              />
+
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="w-full text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                placeholder="Recipe description"
+                rows={3}
+              />
+
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">Tags</h4>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {availableTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => setEditSelectedTags(prev =>
+                      prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id]
+                    )}
+                    className={`text-[11px] font-medium uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                      editSelectedTags.includes(tag.id)
+                        ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                        : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{tag.name}
+                  </button>
+                ))}
+              </div>
+
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">Ingredients</h4>
+              <textarea
+                value={editIngredients}
+                onChange={(e) => setEditIngredients(e.target.value)}
+                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-6 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                placeholder="Each ingredient on a new line"
+                rows={6}
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSaveRecipe}
+                  className="flex-1 bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0 dark:bg-white" />
-                  {ing.info}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                  Save Changes
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex-1 bg-gray-100 text-gray-900 font-medium py-2 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* View Mode */}
+            <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
+              {recipe.image && !imgError ? (
+                <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-500">🍽</div>
+              )}
+            </div>
+
+            <div className="p-8">
+              {recipe.tags && recipe.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {recipe.tags.map((t) => (
+                    <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-3 py-1 rounded-full dark:text-gray-300 dark:bg-gray-700">
+                      {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
+              {recipe.created_at && (
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
+                  {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              )}
+              <div className="h-px bg-gray-100 mb-5 dark:bg-gray-700" />
+              {recipe.description && (
+                <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
+              )}
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
+                <span>Ingredients</span>
+                <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
+              </h4>
+              {loadingIng ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
+                </div>
+              ) : ingredients.length === 0 ? (
+                <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {ingredients.map((ing, i) => (
+                    <li key={ing.id}
+                      className="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 transition-colors px-4 py-2.5 rounded-xl text-sm text-gray-600
+                       dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+                      style={{
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? "translateX(0)" : "translateX(-8px)",
+                        transition: `opacity 220ms ease ${180 + i * 35}ms, transform 220ms ease ${180 + i * 35}ms`,
+                      }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0 dark:bg-white" />
+                      {ing.info}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -240,6 +461,16 @@ export default function RecipesPage() {
     const next = new URLSearchParams(searchParams);
     next.delete("open");
     setSearchParams(next, { replace: true });
+  };
+
+  const handleRecipeUpdate = (updated: Recipe) => {
+    setRecipes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    setSelected(updated);
+  };
+
+  const handleRecipeDelete = (recipeId: string) => {
+    setRecipes(prev => prev.filter(r => r.id !== recipeId));
+    handleCloseModal();
   };
 
   const filtered = recipes.filter((r) => {
@@ -282,7 +513,7 @@ export default function RecipesPage() {
         )}
       </div>
 
-      {selected && <RecipeModal recipe={selected} onClose={handleCloseModal} />}
+      {selected && <RecipeModal recipe={selected} onClose={handleCloseModal} onRecipeUpdate={handleRecipeUpdate} onRecipeDelete={handleRecipeDelete} />}
     </div>
   );
 }
