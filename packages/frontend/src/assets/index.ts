@@ -12,3 +12,5 @@ export { ImageIcon } from "./imageicon";
 export { AddIcon } from "./addicon";
 export { WarningIcon } from "./warningicon";
 export { RecipesIcon } from "./recipesicon";
+export { DiscoverIcon } from "./discovericon";
+export { HeartIcon } from "./hearticon";
