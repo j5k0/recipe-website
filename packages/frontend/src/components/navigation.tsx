@@ -6,6 +6,7 @@ import {
   FilterIcon,
   InformationIcon,
   RecipesIcon,
+  DiscoverIcon,
   SettingsIcon,
   AccountIcon,
   UserIcon,
@@ -205,7 +206,10 @@ export default function Navigation() {
             <NavLink to="/recipes" title="Recipes" className={iconNavClass}>
               <RecipesIcon className="w-4.5 h-4.5" />
             </NavLink>
-            <NavLink to="/about" title="About" className={iconNavClass}>
+            <NavLink to="/discover" title="Discover" className={iconNavClass}>
+              <DiscoverIcon className="w-4.5 h-4.5" />
+            </NavLink>
+<NavLink to="/about" title="About" className={iconNavClass}>
               <InformationIcon className="w-4.5 h-4.5" />
             </NavLink>
             <NavLink to="/settings" title="Settings" className={iconNavClass}>
