@@ -2,6 +2,7 @@ import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe } from "./db/recipes";
+import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
 import { createUser, findUser } from "./db/user";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
@@ -144,7 +145,39 @@ recipeRouter.delete("/recipes/:id", async (req, res) => {
   }
 });
 
-// Login, register 
+// Like / unlike a recipe (auth required)
+recipeRouter.post("/recipes/:id/like", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    await likeRecipe(req.user!.email, req.params.id);
+    res.json({ liked: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to like recipe" });
+  }
+});
+
+recipeRouter.delete("/recipes/:id/like", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    await unlikeRecipe(req.user!.email, req.params.id);
+    res.json({ liked: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to unlike recipe" });
+  }
+});
+
+// Get current user's liked recipes (auth required)
+recipeRouter.get("/user/liked", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const recipes = await getUserLikedRecipes(req.user!.email);
+    res.json(recipes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch liked recipes" });
+  }
+});
+
+// Login, register
 
 loginRouter.post('/register', async (req, res) => {
     try{
