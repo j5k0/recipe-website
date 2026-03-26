@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
+import ShareRecipeForm from "../components/sharerecipe";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -514,6 +515,7 @@ export default function RecipesPage() {
       </div>
 
       {selected && <RecipeModal recipe={selected} onClose={handleCloseModal} onRecipeUpdate={handleRecipeUpdate} onRecipeDelete={handleRecipeDelete} />}
+      <ShareRecipeForm />
     </div>
   );
 }
