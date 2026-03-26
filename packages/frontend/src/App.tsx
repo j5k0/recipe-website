@@ -6,7 +6,6 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
-import ShareRecipeForm from "./components/sharerecipe";
 import Discover from "./pages/Discover";
 import LikedRecipes from "./pages/LikedRecipes";
 import { Routes, Route } from "react-router-dom";
@@ -27,7 +26,6 @@ function App() {
             <Route path="/liked" element={<LikedRecipes />} />
           </Routes>
         </main>
-        <ShareRecipeForm />
         <Footer />
       </div>
     </>

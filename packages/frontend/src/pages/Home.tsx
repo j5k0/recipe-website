@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ShareRecipeForm from "../components/sharerecipe";
 
 const TAG_EMOJIS: Record<string, string> = {
   Meat: "🥩",
@@ -407,6 +408,9 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ── Share Recipe ─────────────────────────────── */}
+      <ShareRecipeForm />
 
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="py-16 bg-white border-t border-gray-100 dark:bg-gray-950 dark:border-gray-800">

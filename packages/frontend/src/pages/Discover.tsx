@@ -254,7 +254,6 @@ export default function Discover() {
 
   // Like visual effects
   const [likeEffect, setLikeEffect] = useState(false);
-  const [flashGreen, setFlashGreen] = useState(false);
   const [heartParticles, setHeartParticles] = useState<{ id: number; x: number }[]>([]);
 
   // Toast
@@ -277,7 +276,9 @@ export default function Discover() {
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     ]).then(([recipeData, userData]) => {
-      setRecipes(Array.isArray(recipeData) ? recipeData : []);
+      const data: Recipe[] = Array.isArray(recipeData) ? recipeData : [];
+      // Shuffle for random discovery order
+      setRecipes([...data].sort(() => Math.random() - 0.5));
       setUser(userData);
       setLoading(false);
     });
@@ -292,9 +293,6 @@ export default function Discover() {
 
   // ── Trigger like effects ───────────────────────────────────────
   const triggerLikeEffects = useCallback(() => {
-    setFlashGreen(true);
-    setTimeout(() => setFlashGreen(false), 500);
-
     setLikeEffect(true);
     setTimeout(() => setLikeEffect(false), 600);
 
@@ -311,6 +309,8 @@ export default function Discover() {
   const advanceCard = useCallback(() => {
     setCurrentIndex((i) => i + 1);
     setExitDirection(null);
+    setLikeEffect(false);
+    setHeartParticles([]);
     dragOffsetRef.current = 0;
     setDragOffset(0);
   }, []);
@@ -340,7 +340,7 @@ export default function Discover() {
         showToast("Skipped", "skip");
       }
 
-      setTimeout(advanceCard, 420);
+      setTimeout(advanceCard, 720);
     },
     [exitDirection, currentIndex, recipes, user, advanceCard, triggerLikeEffects],
   );
@@ -414,18 +414,24 @@ export default function Discover() {
   const likedCount = likedRecipes.length;
 
   const cardStyle = (): React.CSSProperties => {
-    if (exitDirection) {
-      const x = exitDirection === "right" ? "130vw" : "-130vw";
-      const rot = exitDirection === "right" ? 28 : -28;
+    if (exitDirection === "right") {
       return {
-        transform: `translateX(${x}) rotate(${rot}deg)`,
-        transition: "transform 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        opacity: 0,
+        transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.07}deg) scale(1.06)`,
+        transition: "opacity 700ms ease, transform 700ms ease",
+        cursor: "default",
+      };
+    }
+    if (exitDirection === "left") {
+      return {
+        opacity: 0,
+        transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.07}deg) scale(0.94)`,
+        transition: "opacity 600ms ease, transform 600ms ease",
         cursor: "default",
       };
     }
     return {
       transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.07}deg)`,
-      // Spring-like snap-back: slight overshoot then settle
       transition: isDragging ? "none" : "transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       cursor: isDragging ? "grabbing" : "grab",
     };
@@ -471,7 +477,7 @@ export default function Discover() {
               </button>
             )}
             <button
-              onClick={() => { setCurrentIndex(0); setLikedRecipes([]); }}
+              onClick={() => { setCurrentIndex(0); setLikedRecipes([]); setRecipes(prev => [...prev].sort(() => Math.random() - 0.5)); }}
               className="px-5 py-2.5 bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white rounded-full text-sm font-medium hover:opacity-80 transition-opacity border border-gray-200 dark:border-gray-700"
             >
               Start Over
@@ -536,23 +542,45 @@ export default function Discover() {
 
         {/* Card stack */}
         <div className="relative w-full" style={{ height: "480px" }}>
-          {/* Next card peeking behind */}
+          {/* Next card peeking behind — full content, blurred until it becomes active */}
           {nextRecipe && (
             <div
+              key={nextRecipe.id}
               className="absolute inset-0 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-md"
-              style={{ transform: "scale(0.95) translateY(12px)", zIndex: 1 }}
+              style={{
+                filter: exitDirection ? "blur(0px)" : "blur(4px)",
+                transition: exitDirection ? "filter 600ms ease" : "none",
+                zIndex: 1,
+              }}
             >
               {nextRecipe.image ? (
                 <img src={nextRecipe.image} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-600">🍽</div>
               )}
+              <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none">
+                {nextRecipe.tags && nextRecipe.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {nextRecipe.tags.slice(0, 3).map((t) => (
+                      <span key={t.id} className="text-[10px] font-semibold uppercase tracking-wider bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full">
+                        {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-white leading-snug mb-1 line-clamp-2">{nextRecipe.title}</h2>
+                {nextRecipe.description && (
+                  <p className="text-sm text-white/80 line-clamp-2">{nextRecipe.description}</p>
+                )}
+              </div>
             </div>
           )}
 
           {/* Current card */}
           {currentRecipe && (
             <div
+              key={currentRecipe.id}
               className="absolute inset-0 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-xl"
               style={{ ...cardStyle(), zIndex: 2 }}
               onMouseDown={onMouseDown}
@@ -577,13 +605,18 @@ export default function Discover() {
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent pointer-events-none" />
 
-              {/* Green flash on like */}
+              {/* Color overlay — drag tint + full color on exit */}
               <div
                 className="absolute inset-0 rounded-3xl pointer-events-none"
                 style={{
-                  background: "radial-gradient(circle at center, rgba(74,222,128,0.45) 0%, rgba(74,222,128,0.12) 100%)",
-                  opacity: flashGreen ? 1 : 0,
-                  transition: "opacity 450ms ease",
+                  background: exitDirection === "right"
+                    ? "rgba(74,222,128,0.82)"
+                    : exitDirection === "left"
+                    ? "rgba(239,68,68,0.82)"
+                    : dragOffset > 0
+                    ? `rgba(74,222,128,${likeOpacity * 0.38})`
+                    : `rgba(239,68,68,${nopeOpacity * 0.38})`,
+                  transition: exitDirection ? "none" : isDragging ? "none" : "background 200ms ease",
                   zIndex: 3,
                 }}
               />
