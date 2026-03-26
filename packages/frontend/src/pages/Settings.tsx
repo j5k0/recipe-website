@@ -10,7 +10,7 @@ function Toggle({
   return (
     <button
       onClick={onChange}
-      className={`relative w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none ${enabled ? "bg-gray-900" : "bg-gray-200"}`}
+      className={`relative w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none ${enabled ? "bg-gray-900 dark:bg-blue-500" : "bg-gray-200 dark:bg-gray-600"}`}
     >
       <span
         className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${enabled ? "translate-x-4" : "translate-x-0"}`}
