@@ -7,12 +7,16 @@ export async function createRecipe(input: {
   description: string;
   ingredients: string[];
   selectedTags: string[];
+  email: string;
   image?: string | null;
 }): Promise<Recipe> {
   const { rows } = await pool.query<Recipe>(
-    `WITH new_recipe AS (
-            INSERT INTO recipes (title, description, image) 
-            VALUES ($1, $2, $5) 
+      `WITH user_lookup AS (
+            SELECT id FROM users WHERE email = $6
+        ),
+        new_recipe AS (
+            INSERT INTO recipes (title, description, image, created_by) 
+            VALUES ($1, $2, $5, (SELECT id FROM user_lookup)) 
             RETURNING id
         ),
         insert_ingredients AS (
@@ -24,7 +28,7 @@ export async function createRecipe(input: {
         SELECT new_recipe.id, tags.id 
         FROM new_recipe 
         JOIN tags ON tags.name = ANY($4::text[]);`,
-    [input.title, input.description, input.ingredients, input.selectedTags, input.image || null],
+    [input.title, input.description, input.ingredients, input.selectedTags, input.image || null, input.email],
   );
   return rows[0];
 }

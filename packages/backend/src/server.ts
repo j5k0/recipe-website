@@ -18,13 +18,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
-recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
+recipeRouter.post("/recipes", authenticateToken, upload.single("image"), async (req: AuthRequest, res) => {
   try {
     const { title, description } = req.body;
+    const email = req.user!.email;
     const ingredients = [].concat(req.body.ingredients || []);
     const selectedTags = [].concat(req.body.selectedTags || []);
 
     let imageUrl: string | null = null;
+
 
     if (req.file) {
       const fileName = `${Date.now()}-${req.file.originalname}`;
@@ -49,6 +51,7 @@ recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
       description,
       ingredients,
       selectedTags,
+      email,
       image: imageUrl,
     });
 
