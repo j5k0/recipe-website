@@ -160,6 +160,27 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [user, setUser] = useState<{user_name: string, email: string} | null>(null);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+        try {
+            const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/auth/whoami', {
+                credentials: "include",
+            });
+            if (!res.ok) {
+                setUser(null);
+                return;
+            }
+            const data = await res.json();
+            setUser(data);
+        } catch {
+            setUser(null);
+        }
+    }
+    checkAuth();
+  }, []);
+
   useScrollReveal();
 
   useEffect(() => {
@@ -410,7 +431,7 @@ export default function Home() {
       )}
 
       {/* ── Share Recipe ─────────────────────────────── */}
-      <ShareRecipeForm />
+      {user && <ShareRecipeForm />}
 
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="py-16 bg-white border-t border-gray-100 dark:bg-gray-950 dark:border-gray-800">
