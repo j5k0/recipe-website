@@ -220,6 +220,18 @@ loginRouter.post("/login", async (req: Request, res: Response) => {
     res.json({ message: "Logged in" });
 });
 
+loginRouter.post("/logout", async (req, res) => {
+    console.log("received token delete request");
+
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    });
+    
+    return res.status(200).json({});
+})
+
 // for testing purposes
 
 loginRouter.get("/whoami", authenticateToken, (req: AuthRequest, res: Response) => {
