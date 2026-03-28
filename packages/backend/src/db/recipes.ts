@@ -65,6 +65,11 @@ export async function getAllTags() {
   return rows;
 }
 
+export async function getRecipeAuthorId(recipeId: string): Promise<String>{
+    const { rows } = await pool.query<String>('SELECT created_by FROM recipes WHERE id = $1;', [recipeId])
+    return rows[0];
+}
+
 export async function deleteRecipe(recipeId: string): Promise<void> {
   // First get the recipe to check for image
   const { rows } = await pool.query<Recipe>('SELECT image FROM recipes WHERE id = $1', [recipeId]);

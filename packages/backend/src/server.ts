@@ -1,9 +1,9 @@
 import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
-import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe } from "./db/recipes";
+import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
-import { createUser, findUser } from "./db/user";
+import { createUser, findUser, getUserId } from "./db/user";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
@@ -73,6 +73,16 @@ recipeRouter.get("/recipes", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch recipes" });
   }
 });
+
+recipeRouter.get("/recipes/:id/author", async (req, res) => {
+    try{
+        const author = await getRecipeAuthorId(req.params.id);
+        res.json(author);
+    } catch(err){
+        console.error(err);
+        res.json({ error: "Failed to fetch author" });
+    }
+})
 
 recipeRouter.get("/recipes/:id/ingredients", async (req, res) => {
   try {
@@ -221,8 +231,6 @@ loginRouter.post("/login", async (req: Request, res: Response) => {
 });
 
 loginRouter.post("/logout", async (req, res) => {
-    console.log("received token delete request");
-
     res.clearCookie("token", {
         httpOnly: true,
         secure: true,
@@ -234,12 +242,19 @@ loginRouter.post("/logout", async (req, res) => {
 
 // for testing purposes
 
-loginRouter.get("/whoami", authenticateToken, (req: AuthRequest, res: Response) => {
+loginRouter.get("/whoami", authenticateToken, async (req: AuthRequest, res: Response) => {
     if(req.user){
-        res.json({
-            user_name: req.user.user_name,
-            email: req.user.email
-        });
+        const id = await getUserId(req.user.email);
+        if(id != ""){
+            res.json({
+                user_name: req.user.user_name,
+                email: req.user.email,
+                unique_id: id
+            });
+        }
+        else{
+            res.status(500).json({ error: "User was not found" });
+        }
     }
 })
 

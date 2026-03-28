@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
 import ShareRecipeForm from "../components/sharerecipe";
+import { useAuth } from "../AuthContext";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -96,6 +97,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
 
 function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { recipe: Recipe; onClose: () => void; onRecipeUpdate: (updated: Recipe) => void; onRecipeDelete: (id: string) => void }) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [authorId, setAuthorId] = useState<String>("");
   const [loadingIng, setLoadingIng] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -111,6 +113,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 10);
@@ -138,6 +141,15 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
           setEditSelectedTags(recipe.tags.map(t => t.id));
         }
       });
+
+    // Fetch the author of the recipe
+    fetch(api(`/recipes/${recipe.id}/author`))
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => [])
+        .then((data) => {
+            setAuthorId(data.created_by);
+        })
+
 
     return () => { clearTimeout(t); document.body.style.overflow = ""; };
   }, [recipe.id]);
@@ -257,7 +269,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         }}
       >
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-          {editing ? (
+          {(user && user.unique_id == authorId) ?
+              editing ? (
             <>
               <button onClick={handleCancelEdit} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
                 <CloseIcon className="w-4 h-4" />
@@ -271,11 +284,11 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
               <button onClick={handleDeleteRecipe} className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors dark:bg-red-500 dark:hover:bg-red-600">
                 Delete
               </button>
+            </>
+          ) : null}
               <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
                 <CloseIcon className="w-4 h-4" />
               </button>
-            </>
-          )}
         </div>
 
         {editing ? (

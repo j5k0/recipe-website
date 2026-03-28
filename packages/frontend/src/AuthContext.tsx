@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-const AuthContext = createContext<{user: {user_name: string; email: string} | null; refreshUser: () => Promise<void>;}>({user: null, refreshUser: async () => {}});
+const AuthContext = createContext<{user: { unique_id: string; user_name: string; email: string} | null; refreshUser: () => Promise<void>;}>({user: null, refreshUser: async () => {}});
 
 export function AuthProvider({children}: {children: ReactNode}){
     const [user, setUser] = useState(null);
