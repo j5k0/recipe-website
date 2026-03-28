@@ -1,19 +1,10 @@
 import { ExpandArrow } from "../assets";
-import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 export default function Account() {
-    const [user, setUser] = useState<{user_name: string, email: string} | null>(null);
-
-    useEffect(() => {
-        fetch(import.meta.env.VITE_BACKEND_URL + '/auth/whoami', {
-            credentials: "include",
-        })
-        .then(res => res.json())
-        .then(data => setUser(data))
-        .catch(() => {});
-        if(!user)
-            setUser({user_name: "", email: ""})
-  }, []);
+    const navigate = useNavigate();
+    const { user, refreshUser } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16 dark:bg-gray-900">
@@ -67,25 +58,44 @@ export default function Account() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:divide-gray-700">
           {[
             {
+                icon: "👋",
+                label: "Sign out",
+                sub: "Sign out of your account",
+                onClick: async () => {
+                    const res = await fetch(import.meta.env.VITE_BACKEND_URL + "/auth/logout", {
+                        method: "POST",
+                        credentials: "include"
+                    })
+                    if(res.ok){
+                        refreshUser();
+                        navigate("/");
+                    }
+                }
+            },
+            {
               icon: "🔒",
               label: "Change password",
               sub: "Update your account password",
+              onClick: () => {}
             },
             {
               icon: "📧",
               label: "Contact preferences",
               sub: "Manage your information and notifications",
+              onClick: () => {}
             },
             {
               icon: "🗑",
               label: "Delete account",
               sub: "Permanently remove your account",
               danger: true,
+              onClick: () => {}
             },
           ].map((item) => (
             <button
               key={item.label}
               className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-left dark:hover:bg-gray-700"
+              onClick={item.onClick}
             >
               <span className="text-xl w-8 text-center">{item.icon}</span>
               <div>

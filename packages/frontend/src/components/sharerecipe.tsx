@@ -72,6 +72,7 @@ export default function ShareRecipeForm() {
       {
         method: "POST",
         body: formData,
+        credentials: "include"
       }
     );
 

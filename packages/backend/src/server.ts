@@ -1,9 +1,9 @@
 import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
-import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe } from "./db/recipes";
+import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
-import { createUser, findUser } from "./db/user";
+import { createUser, findUser, getUserId } from "./db/user";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
@@ -18,13 +18,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
-recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
+recipeRouter.post("/recipes", authenticateToken, upload.single("image"), async (req: AuthRequest, res) => {
   try {
     const { title, description } = req.body;
+    const email = req.user!.email;
     const ingredients = [].concat(req.body.ingredients || []);
     const selectedTags = [].concat(req.body.selectedTags || []);
 
     let imageUrl: string | null = null;
+
 
     if (req.file) {
       const fileName = `${Date.now()}-${req.file.originalname}`;
@@ -49,6 +51,7 @@ recipeRouter.post("/recipes", upload.single("image"), async (req, res) => {
       description,
       ingredients,
       selectedTags,
+      email,
       image: imageUrl,
     });
 
@@ -70,6 +73,16 @@ recipeRouter.get("/recipes", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch recipes" });
   }
 });
+
+recipeRouter.get("/recipes/:id/author", async (req, res) => {
+    try{
+        const author = await getRecipeAuthorId(req.params.id);
+        res.json(author);
+    } catch(err){
+        console.error(err);
+        res.json({ error: "Failed to fetch author" });
+    }
+})
 
 recipeRouter.get("/recipes/:id/ingredients", async (req, res) => {
   try {
@@ -217,14 +230,31 @@ loginRouter.post("/login", async (req: Request, res: Response) => {
     res.json({ message: "Logged in" });
 });
 
+loginRouter.post("/logout", async (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    });
+    
+    return res.status(200).json({});
+})
+
 // for testing purposes
 
-loginRouter.get("/whoami", authenticateToken, (req: AuthRequest, res: Response) => {
+loginRouter.get("/whoami", authenticateToken, async (req: AuthRequest, res: Response) => {
     if(req.user){
-        res.json({
-            user_name: req.user.user_name,
-            email: req.user.email
-        });
+        const id = await getUserId(req.user.email);
+        if(id != ""){
+            res.json({
+                user_name: req.user.user_name,
+                email: req.user.email,
+                unique_id: id
+            });
+        }
+        else{
+            res.status(500).json({ error: "User was not found" });
+        }
     }
 })
 

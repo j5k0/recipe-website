@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Logo, CloseIcon } from "../assets";
+import { useAuth } from "../AuthContext"
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false);
@@ -9,6 +10,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [loginState, setLoginState] = useState<"fail" | "success" | "unknown">("unknown");
   const overlayRef = useRef<HTMLDivElement>(null);
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 10);
@@ -62,6 +64,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           });
           if(res && res.ok){
               setLoginState("success");
+              await refreshUser()
           }
           else{
               setLoginState("fail");

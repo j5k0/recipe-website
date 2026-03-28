@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ShareRecipeForm from "../components/sharerecipe";
+import { useAuth } from "../AuthContext"
+
 
 const TAG_EMOJIS: Record<string, string> = {
   Meat: "🥩",
@@ -160,6 +162,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const { user } = useAuth();
+
   useScrollReveal();
 
   useEffect(() => {
@@ -410,7 +414,7 @@ export default function Home() {
       )}
 
       {/* ── Share Recipe ─────────────────────────────── */}
-      <ShareRecipeForm />
+      {user && <ShareRecipeForm />}
 
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="py-16 bg-white border-t border-gray-100 dark:bg-gray-950 dark:border-gray-800">

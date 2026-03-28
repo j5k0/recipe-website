@@ -29,3 +29,10 @@ export async function findUser(
     else return;
 }
 
+export async function getUserId(email: string): Promise<String>{
+    const { rows } = await pool.query<{id: String}>(`SELECT id FROM users WHERE email = $1;`, [email]);
+    if(rows && rows[0])
+        return rows[0].id;
+    return "";
+}
+

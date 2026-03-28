@@ -7,12 +7,16 @@ export async function createRecipe(input: {
   description: string;
   ingredients: string[];
   selectedTags: string[];
+  email: string;
   image?: string | null;
 }): Promise<Recipe> {
   const { rows } = await pool.query<Recipe>(
-    `WITH new_recipe AS (
-            INSERT INTO recipes (title, description, image) 
-            VALUES ($1, $2, $5) 
+      `WITH user_lookup AS (
+            SELECT id FROM users WHERE email = $6
+        ),
+        new_recipe AS (
+            INSERT INTO recipes (title, description, image, created_by) 
+            VALUES ($1, $2, $5, (SELECT id FROM user_lookup)) 
             RETURNING id
         ),
         insert_ingredients AS (
@@ -24,7 +28,7 @@ export async function createRecipe(input: {
         SELECT new_recipe.id, tags.id 
         FROM new_recipe 
         JOIN tags ON tags.name = ANY($4::text[]);`,
-    [input.title, input.description, input.ingredients, input.selectedTags, input.image || null],
+    [input.title, input.description, input.ingredients, input.selectedTags, input.image || null, input.email],
   );
   return rows[0];
 }
@@ -59,6 +63,11 @@ export async function getRecipeIngredients(recipeId: string) {
 export async function getAllTags() {
   const { rows } = await pool.query(`SELECT * FROM tags ORDER BY name ASC`);
   return rows;
+}
+
+export async function getRecipeAuthorId(recipeId: string): Promise<String>{
+    const { rows } = await pool.query<String>('SELECT created_by FROM recipes WHERE id = $1;', [recipeId])
+    return rows[0];
 }
 
 export async function deleteRecipe(recipeId: string): Promise<void> {
