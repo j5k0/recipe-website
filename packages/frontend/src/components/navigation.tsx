@@ -12,6 +12,7 @@ import {
   UserIcon,
 } from "../assets";
 import LoginModal from "./loginmodal.tsx";
+import { useAuth } from "../AuthContext";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -47,6 +48,7 @@ export default function Navigation() {
   const [tags, setTags] = useState<Tag[]>([]);
   const activeTags = searchParams.getAll("tag");
   const filterRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetch(api("/tags"))
@@ -215,12 +217,12 @@ export default function Navigation() {
             <NavLink to="/settings" title="Settings" className={iconNavClass}>
               <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
-            {(
+            {user && (
                 <NavLink to="/account" title="Account" className={iconNavClass}>
                     <AccountIcon className="w-4.5 h-4.5" />
                 </NavLink>
             )}
-            {(
+            {!user && (
                 <button onClick={() => setLoginOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1 
                 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
                     <UserIcon className="w-4 h-4" />

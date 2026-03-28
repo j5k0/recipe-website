@@ -9,10 +9,11 @@ import Settings from "./pages/Settings";
 import Discover from "./pages/Discover";
 import LikedRecipes from "./pages/LikedRecipes";
 import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./AuthContext"
 
 function App() {
   return (
-    <>
+    <AuthProvider>
       <div className="min-h-screen flex flex-col">
         <Navigation />
         <main className="flex-1">
@@ -28,7 +29,7 @@ function App() {
         </main>
         <Footer />
       </div>
-    </>
+    </AuthProvider>
   );
 }
 

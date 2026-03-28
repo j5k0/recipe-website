@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ShareRecipeForm from "../components/sharerecipe";
+import { useAuth } from "../AuthContext"
+
 
 const TAG_EMOJIS: Record<string, string> = {
   Meat: "🥩",
@@ -160,26 +162,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [user, setUser] = useState<{user_name: string, email: string} | null>(null);
-
-    useEffect(() => {
-        const checkAuth = async () => {
-        try {
-            const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/auth/whoami', {
-                credentials: "include",
-            });
-            if (!res.ok) {
-                setUser(null);
-                return;
-            }
-            const data = await res.json();
-            setUser(data);
-        } catch {
-            setUser(null);
-        }
-    }
-    checkAuth();
-  }, []);
+  const { user } = useAuth();
 
   useScrollReveal();
 
