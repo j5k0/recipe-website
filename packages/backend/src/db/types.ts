@@ -7,3 +7,13 @@ export interface Recipe{
     created_at: string;
     image: string | null;
 }
+
+export interface RecipeReview {
+    id: string;
+    recipe_id: string;
+    reviewer_id: string;
+    reviewer_name: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+}

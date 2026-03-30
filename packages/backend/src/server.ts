@@ -1,7 +1,7 @@
 import multer from "multer";
 import { supabase } from "./db/supabase";
 import express from "express";
-import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId } from "./db/recipes";
+import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
 import { createUser, findUser, getUserId } from "./db/user";
 import jwt from 'jsonwebtoken';
@@ -9,12 +9,17 @@ import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
 import { User, JwtPayload, AuthRequest } from "./types";
 import { Router, Request, Response } from "express";
+import { z } from "zod";
 
 const upload = multer(); 
 const recipeRouter = express.Router();
 const loginRouter = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const reviewSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.string().trim().min(1).max(1000),
+});
 
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
@@ -91,6 +96,42 @@ recipeRouter.get("/recipes/:id/ingredients", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch ingredients" });
+  }
+});
+
+recipeRouter.get("/recipes/:id/reviews", async (req, res) => {
+  try {
+    const reviews = await getRecipeReviews(req.params.id);
+    res.json(reviews);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
+recipeRouter.post("/recipes/:id/reviews", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const parsed = reviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid review payload" });
+    }
+
+    const reviewerId = await getUserId(req.user!.email);
+    if (!reviewerId) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const review = await addRecipeReview({
+      recipeId: req.params.id,
+      reviewerId: reviewerId.toString(),
+      rating: parsed.data.rating,
+      comment: parsed.data.comment,
+    });
+
+    return res.status(201).json(review);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to add review" });
   }
 });
 
