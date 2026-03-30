@@ -225,7 +225,11 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Failed to update recipe");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error ?? "Failed to update recipe");
+      }
+
 
       const updatedRecipe = await response.json();
       onRecipeUpdate(updatedRecipe);
@@ -234,7 +238,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       setImagePreview(null);
     } catch (err) {
       console.error("Error saving recipe:", err);
-      alert("Failed to save recipe");
+      alert(err instanceof Error ? err.message : "Failed to save recipe");
     }
   };
 

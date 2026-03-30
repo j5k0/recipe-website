@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 import { UploadIcon, CloseIcon, ImageIcon, AddIcon } from "../assets";
 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+
+
 const TAGS = [
   { label: "Meat", emoji: "🥩" },
   { label: "Salad", emoji: "🥗" },
@@ -18,6 +23,7 @@ const TAGS = [
 
 export default function ShareRecipeForm() {
   const [title, setTitle] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState([""]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -45,39 +51,62 @@ export default function ShareRecipeForm() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+    setSubmitError(null);
+
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImagePreview(null);
+      e.target.value = "";
+      setSubmitError("Only JPG, PNG, and WEBP images are allowed.");
+      return;
     }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setImagePreview(null);
+      e.target.value = "";
+      setSubmitError("Image is too large. Maximum size is 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // FormData object to send multipart/form-data (needed for file uploads)
+    setSubmitError(null);
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
-    ingredients.forEach(i => formData.append("ingredients", i));
-    selectedTags.forEach(t => formData.append("selectedTags", t));
+    ingredients.forEach((i) => formData.append("ingredients", i));
+    selectedTags.forEach((t) => formData.append("selectedTags", t));
 
-    if (fileInputRef.current?.files?.[0]){
+    if (fileInputRef.current?.files?.[0]) {
       formData.append("image", fileInputRef.current.files[0]);
     }
 
-    // Send the FormData to the backend
-    const response = await fetch(
-      import.meta.env.VITE_BACKEND_URL + "/api/recipes",
-      {
-        method: "POST",
+    try {
+      const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/recipes", {
+       method: "POST",
         body: formData,
-        credentials: "include"
-      }
-    );
+        credentials: "include",
+      });
 
-    if (!response.ok) throw new Error("Failed to submit");
-    setSubmitted(true);
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error ?? "Failed to submit recipe");
+      }
+
+      setSubmitted(true);
+      setSubmitError(null);
+    }   catch (err) {
+      setSubmitted(false);
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit recipe");
+    }
   };
 
   return (
@@ -95,6 +124,12 @@ export default function ShareRecipeForm() {
         {submitted && (
           <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm text-center dark:bg-green-950/40 dark:border-green-900 dark:text-green-300">
             🎉 Recipe submitted successfully!
+          </div>
+        )}
+
+        {submitError && (
+          <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center dark:bg-red-950/40 dark:border-red-900 dark:text-red-300">
+            {submitError}
           </div>
         )}
 
@@ -144,13 +179,13 @@ export default function ShareRecipeForm() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleImageUpload}
                     className="hidden"
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-300">
-                  Image will be automatically resized to fit
+                  Allowed: JPG, PNG, WEBP. Maximum size: 5MB.
                 </p>
               </div>
 
