@@ -8,10 +8,11 @@ import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
 import { User, JwtPayload, AuthRequest } from "./types";
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { error } from "console";
 
-const upload = multer(); 
+
 const recipeRouter = express.Router();
 const loginRouter = express.Router();
 
@@ -21,9 +22,47 @@ const reviewSchema = z.object({
   comment: z.string().trim().min(1).max(1000),
 });
 
+
+//Image size and format validation
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const upload = multer({
+  limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if(!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
+      return cb(new Error("Only JPG, PNG and WEBP images are allowed."));
+    }
+
+    cb(null, true);
+  },
+});
+
+function uploadRecipeImage(req: Request, res:Response, next: NextFunction) {
+  upload.single("image")(req, res, (err: unknown) => {
+    if(!err) {
+      return next();
+    }
+
+    if(err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ error: "Image is too large. Maximum size is 5MB." });
+    }
+
+    if(err instanceof Error) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(400).json({ error: "Invalid image upload." });
+  })
+}
+
 // Route for creating a new recipe
 // Uses multer middleware to handle a single file upload with the field name "image"
-recipeRouter.post("/recipes", authenticateToken, upload.single("image"), async (req: AuthRequest, res) => {
+recipeRouter.post("/recipes", authenticateToken, uploadRecipeImage, async (req: AuthRequest, res) => {
   try {
     const { title, description } = req.body;
     const email = req.user!.email;
@@ -145,7 +184,7 @@ recipeRouter.get("/tags", async (req, res) => {
   }
 });
 
-recipeRouter.put("/recipes/:id", upload.single("image"), async (req, res) => {
+recipeRouter.put("/recipes/:id", uploadRecipeImage, async (req, res) => {
   try {
     const recipeId = req.params.id;
     const { title, description } = req.body;
