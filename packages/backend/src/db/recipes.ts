@@ -1,6 +1,7 @@
 import { pool } from "./pool";
 import { supabase } from "./supabase";
-import { Recipe } from "./types";
+import { Recipe, RecipeReview } from "./types";
+import { randomUUID } from "crypto";
 
 export async function createRecipe(input: {
   title: string;
@@ -63,6 +64,50 @@ export async function getRecipeIngredients(recipeId: string) {
 export async function getAllTags() {
   const { rows } = await pool.query(`SELECT * FROM tags ORDER BY name ASC`);
   return rows;
+}
+
+export async function getRecipeReviews(recipeId: string): Promise<RecipeReview[]> {
+  const { rows } = await pool.query<RecipeReview>(
+    `SELECT
+      rr.id,
+      rr.recipe_id,
+      rr.reviewer_id,
+      u.user_name AS reviewer_name,
+      rr.rating,
+      rr.comment,
+      rr.created_at
+     FROM recipe_reviews rr
+     JOIN users u ON u.id = rr.reviewer_id
+     WHERE rr.recipe_id = $1
+     ORDER BY rr.created_at DESC`,
+    [recipeId],
+  );
+  return rows;
+}
+
+export async function addRecipeReview(input: {
+  recipeId: string;
+  reviewerId: string;
+  rating: number;
+  comment: string;
+}): Promise<RecipeReview> {
+  const reviewId = randomUUID();
+  const { rows } = await pool.query<RecipeReview>(
+    `INSERT INTO recipe_reviews (id, recipe_id, reviewer_id, rating, comment)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, recipe_id, reviewer_id, rating, comment, created_at`,
+    [reviewId, input.recipeId, input.reviewerId, input.rating, input.comment],
+  );
+
+  const { rows: userRows } = await pool.query<{ user_name: string }>(
+    `SELECT user_name FROM users WHERE id = $1`,
+    [input.reviewerId],
+  );
+
+  return {
+    ...rows[0],
+    reviewer_name: userRows[0]?.user_name ?? "Unknown",
+  };
 }
 
 export async function getRecipeAuthorId(recipeId: string): Promise<String>{

@@ -6,6 +6,15 @@ import { useAuth } from "../AuthContext";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
+interface RecipeReview {
+  id: string;
+  recipe_id: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
 interface Recipe {
   id: string; title: string; description: string;
   created_at: string; image: string | null; tags?: Tag[];
@@ -97,8 +106,10 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
 
 function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { recipe: Recipe; onClose: () => void; onRecipeUpdate: (updated: Recipe) => void; onRecipeDelete: (id: string) => void }) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [reviews, setReviews] = useState<RecipeReview[]>([]);
   const [authorId, setAuthorId] = useState<String>("");
   const [loadingIng, setLoadingIng] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [visible, setVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -113,6 +124,9 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -128,6 +142,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         // Initialize edit ingredients as newline-separated string
         setEditIngredients(data.map((ing: Ingredient) => ing.info).join("\n"));
         setLoadingIng(false);
+      });
+
+    fetch(api(`/recipes/${recipe.id}/reviews`))
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => [])
+      .then((data) => {
+        setReviews(data);
+        setLoadingReviews(false);
       });
 
     // Fetch available tags
@@ -243,6 +265,46 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     setImagePreview(null);
     if (recipe.tags) {
       setEditSelectedTags(recipe.tags.map(t => t.id));
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      alert("Please log in to add a review.");
+      return;
+    }
+
+    const trimmedComment = newReviewComment.trim();
+    if (!trimmedComment) {
+      alert("Review comment cannot be empty.");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const response = await fetch(api(`/recipes/${recipe.id}/reviews`), {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating: newReviewRating,
+          comment: trimmedComment,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to add review");
+
+      const createdReview: RecipeReview = await response.json();
+      setReviews((prev) => [createdReview, ...prev]);
+      setNewReviewComment("");
+      setNewReviewRating(5);
+    } catch (err) {
+      console.error("Error adding review:", err);
+      alert("Failed to add review");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -434,6 +496,71 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                     </li>
                   ))}
                 </ul>
+              )}
+
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mt-8 mb-3 flex items-center gap-3 dark:text-gray-300">
+                <span>Reviews</span>
+                <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
+              </h4>
+
+              {user ? (
+                <div className="mb-5 p-4 rounded-xl bg-gray-50 border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
+                  <div className="flex items-center gap-3 mb-3">
+                    <label className="text-sm text-gray-600 dark:text-gray-200">Rating:</label>
+                    <select
+                      value={newReviewRating}
+                      onChange={(e) => setNewReviewRating(Number(e.target.value))}
+                      className="text-sm rounded-lg border border-gray-200 px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    >
+                      {[5, 4, 3, 2, 1].map((rating) => (
+                        <option key={rating} value={rating}>
+                          {rating} star{rating > 1 ? "s" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <textarea
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    rows={3}
+                    placeholder="Share your thoughts about this recipe..."
+                    className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 mb-3 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
+                  />
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={submittingReview}
+                    className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  >
+                    {submittingReview ? "Submitting..." : "Add Review"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm italic mb-5 dark:text-gray-300">
+                  Log in to write a review.
+                </p>
+              )}
+
+              {loadingReviews ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => <div key={i} className="h-20 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
+                </div>
+              ) : reviews.length === 0 ? (
+                <p className="text-gray-400 text-sm italic dark:text-gray-300">No reviews yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:bg-gray-700 dark:border-gray-600">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-white">{review.reviewer_name}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-300">
+                          {new Date(review.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                        </p>
+                      </div>
+                      <p className="text-sm text-amber-500 mb-2">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-200">{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </>
