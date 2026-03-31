@@ -105,7 +105,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
           {recipe.average_rating !== undefined && recipe.average_rating !== null && recipe.average_rating > 0 && (
             <div className="flex items-center gap-1 text-xs text-amber-500">
               <span className="text-sm">★</span>
-              <span className="font-medium">{recipe.average_rating.toFixed(1)}</span>
+              <span className="font-medium">{Number(recipe.average_rating).toFixed(1)}</span>
             </div>
           )}
         </div>
