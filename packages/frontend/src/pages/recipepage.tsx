@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
+import { ExpandArrow, CloseIcon, WarningIcon, SortDropdown } from "../assets";
+import type { SortOption } from "../assets/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
 
@@ -18,6 +19,7 @@ interface RecipeReview {
 interface Recipe {
   id: string; title: string; description: string;
   created_at: string; image: string | null; tags?: Tag[];
+  average_rating?: number | null;
 }
 
 const TAG_EMOJIS: Record<string, string> = {
@@ -95,9 +97,17 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         {recipe.description && (
           <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 dark:text-gray-300">{recipe.description}</p>
         )}
-        <div className="mt-4 flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200 dark:text-gray-500 dark:group-hover:text-white">
-          <span className="uppercase tracking-widest font-medium">View recipe</span>
-          <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200 dark:text-gray-500 dark:group-hover:text-white">
+            <span className="uppercase tracking-widest font-medium">View recipe</span>
+            <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
+          </div>
+          {recipe.average_rating !== undefined && recipe.average_rating !== null && recipe.average_rating > 0 && (
+            <div className="flex items-center gap-1 text-xs text-amber-500">
+              <span className="text-sm">★</span>
+              <span className="font-medium">{recipe.average_rating.toFixed(1)}</span>
+            </div>
+          )}
         </div>
       </div>
     </button>
@@ -114,7 +124,6 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [visible, setVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Edit mode state
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(recipe.title);
   const [editDescription, setEditDescription] = useState(recipe.description);
@@ -133,13 +142,11 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     const t = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
 
-    // Fetch ingredients
     fetch(api(`/recipes/${recipe.id}/ingredients`))
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => [])
       .then((data) => {
         setIngredients(data);
-        // Initialize edit ingredients as newline-separated string
         setEditIngredients(data.map((ing: Ingredient) => ing.info).join("\n"));
         setLoadingIng(false);
       });
@@ -152,19 +159,16 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         setLoadingReviews(false);
       });
 
-    // Fetch available tags
     fetch(api("/tags"))
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => [])
       .then((data) => {
         setAvailableTags(data);
-        // Initialize selected tags with current recipe tags
         if (recipe.tags) {
           setEditSelectedTags(recipe.tags.map(t => t.id));
         }
       });
 
-    // Fetch the author of the recipe
     fetch(api(`/recipes/${recipe.id}/author`))
         .then((res) => (res.ok ? res.json() : []))
         .catch(() => [])
@@ -205,17 +209,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       formData.append("title", editTitle);
       formData.append("description", editDescription);
 
-      // Add ingredients
       const ingredientsList = editIngredients.split("\n").filter(i => i.trim());
       ingredientsList.forEach(ing => formData.append("ingredients", ing));
 
-      // Add selected tag names (not IDs)
       const selectedTagNames = availableTags
         .filter(tag => editSelectedTags.includes(tag.id))
         .map(tag => tag.name);
       selectedTagNames.forEach(tag => formData.append("selectedTags", tag));
 
-      // Add image only if changed
       if (editImage) {
         formData.append("image", editImage);
       }
@@ -359,7 +360,6 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
         {editing ? (
           <>
-            {/* Edit Mode Image */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700 w-full hover:opacity-80 transition-opacity cursor-pointer relative"
@@ -444,7 +444,6 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
           </>
         ) : (
           <>
-            {/* View Mode */}
             <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
               {recipe.image && !imgError ? (
                 <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
@@ -579,6 +578,7 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Recipe | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get("search") ?? "";
@@ -593,7 +593,6 @@ export default function RecipesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Auto-open modal when ?open=id is set (from nav search click)
   useEffect(() => {
     if (openId && recipes.length > 0) {
       const recipe = recipes.find((r) => r.id === openId);
@@ -625,6 +624,25 @@ export default function RecipesPage() {
     return matchSearch && matchTag;
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "date-asc":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "reviews-desc":
+        const ratingA = a.average_rating ?? -1;
+        const ratingB = b.average_rating ?? -1;
+        return ratingB - ratingA;
+      case "reviews-asc":
+        const ratingC = a.average_rating ?? -1;
+        const ratingD = b.average_rating ?? -1;
+        return ratingC - ratingD;
+      default:
+        return 0;
+    }
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16 dark:bg-gray-900">
       {error && (
@@ -637,11 +655,20 @@ export default function RecipesPage() {
       )}
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {loading ? "Recipes" : `${sorted.length} Recipe${sorted.length !== 1 ? "s" : ""}`}
+          </h2>
+          {!loading && sorted.length > 0 && (
+            <SortDropdown value={sortBy} onChange={setSortBy} />
+          )}
+        </div>
+
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-2xl mb-4 dark:bg-gray-800">🍃</div>
             <h3 className="text-base font-semibold text-gray-900 mb-1 dark:text-white">No recipes found</h3>
@@ -651,7 +678,7 @@ export default function RecipesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filtered.map((r, i) => (
+            {sorted.map((r, i) => (
               <RecipeCard key={r.id} recipe={r} index={i} onClick={() => setSelected(r)} />
             ))}
           </div>
