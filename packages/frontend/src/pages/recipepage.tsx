@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ExpandArrow, CloseIcon, WarningIcon, SortDropdown } from "../assets";
-import type { SortOption } from "../assets/sortdropdown";
+import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
+import { SortDropdown, type SortOption } from "../components/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
 

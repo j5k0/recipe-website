@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { SortIcon } from "./sorticon";
+import { SortIcon } from "../assets/sorticon";
 
 export type SortOption = "date-desc" | "date-asc" | "reviews-desc" | "reviews-asc";
 
