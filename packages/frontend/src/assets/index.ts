@@ -14,3 +14,4 @@ export { WarningIcon } from "./warningicon";
 export { RecipesIcon } from "./recipesicon";
 export { DiscoverIcon } from "./discovericon";
 export { HeartIcon } from "./hearticon";
+export { SortIcon } from "./sorticon";
