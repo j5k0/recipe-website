@@ -48,3 +48,7 @@ export async function setAvatarUrl(email: string, url: string): Promise<void> {
     await pool.query('UPDATE users SET avatar_url = $1 WHERE email = $2', [url, email]);
 }
 
+export async function deleteUser(email: string): Promise<void> {
+    await pool.query('DELETE FROM users WHERE email = $1', [email]);
+}
+
