@@ -3,7 +3,7 @@ import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
-import { createUser, findUser, getUserId, getAvatarUrl, setAvatarUrl } from "./db/user";
+import { createUser, findUser, getUserId, getAvatarUrl, setAvatarUrl, deleteUser } from "./db/user";
 import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
@@ -357,6 +357,23 @@ loginRouter.post("/login", async (req: Request, res: Response) => {
         sameSite: "none"
     });
     res.json({ message: "Logged in" });
+});
+
+loginRouter.delete("/user", authenticateToken, async (req: AuthRequest, res: Response) => {
+    try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ error: "Password required" });
+        const user = await findUser(req.user!.email);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        const valid = await bcrypt.compare(password, user.password_hash);
+        if (!valid) return res.status(401).json({ error: "Incorrect password" });
+        await deleteUser(req.user!.email);
+        res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "none" });
+        return res.status(200).json({ message: "Account deleted" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to delete account" });
+    }
 });
 
 loginRouter.post("/logout", async (req, res) => {
