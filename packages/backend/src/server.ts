@@ -3,7 +3,7 @@ import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
-import { createUser, findUser, getUserId } from "./db/user";
+import { createUser, findUser, getUserId, getAvatarUrl, setAvatarUrl } from "./db/user";
 import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
@@ -271,6 +271,29 @@ recipeRouter.get("/user/liked", authenticateToken, async (req: AuthRequest, res:
   }
 });
 
+recipeRouter.post("/user/avatar", authenticateToken, uploadRecipeImage, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+    const email = req.user!.email;
+    const fileName = `avatar-${email}`;
+    const { error } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true,
+      });
+    if (error) throw error;
+    const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    await setAvatarUrl(email, data.publicUrl);
+    return res.json({ avatar_url: data.publicUrl });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to upload avatar" });
+  }
+});
+
 recipeRouter.get("/user/preferences", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const prefs = await getPreferences(req.user!.email);
@@ -349,12 +372,16 @@ loginRouter.post("/logout", async (req, res) => {
 
 loginRouter.get("/whoami", authenticateToken, async (req: AuthRequest, res: Response) => {
     if(req.user){
-        const id = await getUserId(req.user.email);
+        const [id, avatar_url] = await Promise.all([
+            getUserId(req.user.email),
+            getAvatarUrl(req.user.email),
+        ]);
         if(id != ""){
             res.json({
                 user_name: req.user.user_name,
                 email: req.user.email,
-                unique_id: id
+                unique_id: id,
+                avatar_url,
             });
         }
         else{
