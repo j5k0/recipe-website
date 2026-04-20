@@ -286,8 +286,9 @@ recipeRouter.post("/user/avatar", authenticateToken, uploadRecipeImage, async (r
       });
     if (error) throw error;
     const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
-    await setAvatarUrl(email, data.publicUrl);
-    return res.json({ avatar_url: data.publicUrl });
+    const avatarUrl = `${data.publicUrl}?t=${Date.now()}`;
+    await setAvatarUrl(email, avatarUrl);
+    return res.json({ avatar_url: avatarUrl });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Failed to upload avatar" });
