@@ -4,6 +4,7 @@ import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
 import { createUser, findUser, getUserId } from "./db/user";
+import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
@@ -267,6 +268,30 @@ recipeRouter.get("/user/liked", authenticateToken, async (req: AuthRequest, res:
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch liked recipes" });
+  }
+});
+
+recipeRouter.get("/user/preferences", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const prefs = await getPreferences(req.user!.email);
+    res.json(prefs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch preferences" });
+  }
+});
+
+recipeRouter.put("/user/preferences", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { email_notifications, marketing_emails } = req.body;
+    if (typeof email_notifications !== "boolean" || typeof marketing_emails !== "boolean") {
+      return res.status(400).json({ error: "Invalid preferences payload" });
+    }
+    await upsertPreferences(req.user!.email, { email_notifications, marketing_emails });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to update preferences" });
   }
 });
 
