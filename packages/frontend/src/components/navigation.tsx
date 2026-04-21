@@ -8,7 +8,6 @@ import {
   RecipesIcon,
   DiscoverIcon,
   SettingsIcon,
-  AccountIcon,
   UserIcon,
 } from "../assets";
 import LoginModal from "./loginmodal.tsx";
@@ -218,8 +217,33 @@ export default function Navigation() {
               <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
             {user && (
-                <NavLink to="/account" title="Account" className={iconNavClass}>
-                    <AccountIcon className="w-4.5 h-4.5" />
+                <NavLink
+                  to="/account"
+                  title="Account"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded-full transition-colors ${
+                      isActive
+                        ? "bg-gray-100 dark:bg-gray-700"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`
+                  }
+                >
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.user_name}
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center shrink-0">
+                      <span className="text-xs font-semibold text-white dark:text-gray-900">
+                        {user.user_name[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-gray-900 dark:text-white pr-1">
+                    {user.user_name}
+                  </span>
                 </NavLink>
             )}
             {!user && (

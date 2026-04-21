@@ -36,3 +36,19 @@ export async function getUserId(email: string): Promise<String>{
     return "";
 }
 
+export async function getAvatarUrl(email: string): Promise<string | null> {
+    const { rows } = await pool.query<{ avatar_url: string | null }>(
+        'SELECT avatar_url FROM users WHERE email = $1',
+        [email]
+    );
+    return rows[0]?.avatar_url ?? null;
+}
+
+export async function setAvatarUrl(email: string, url: string): Promise<void> {
+    await pool.query('UPDATE users SET avatar_url = $1 WHERE email = $2', [url, email]);
+}
+
+export async function deleteUser(email: string): Promise<void> {
+    await pool.query('DELETE FROM users WHERE email = $1', [email]);
+}
+
