@@ -3,7 +3,7 @@ import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
-import { createUser, findUser, getUserId, getAvatarUrl, setAvatarUrl, deleteUser } from "./db/user";
+import { createUser, findUser, getUserId, getUserName, getAvatarUrl, setAvatarUrl, deleteUser, updatePassword, updateProfile } from "./db/user";
 import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
@@ -376,6 +376,50 @@ loginRouter.delete("/user", authenticateToken, async (req: AuthRequest, res: Res
     }
 });
 
+loginRouter.put("/user/password", authenticateToken, async (req: AuthRequest, res: Response) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: "Current and new password required" });
+        }
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: "Password must be at least 8 characters" });
+        }
+        const user = await findUser(req.user!.email);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        const valid = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!valid) return res.status(401).json({ error: "Incorrect password" });
+        await updatePassword(req.user!.email, newPassword);
+        return res.json({ message: "Password updated" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to update password" });
+    }
+});
+loginRouter.put("/user/profile", authenticateToken, async (req: AuthRequest, res: Response) => {
+    try {
+        const { user_name, email, avatar_url } = req.body;
+        const currentEmail = req.user!.email;
+        let newEmail = currentEmail;
+        
+        await updateProfile(currentEmail, user_name, email, avatar_url);
+        newEmail = email || currentEmail;
+        
+        if (email && email !== currentEmail) {
+            res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "none" });
+            const newPayload: JwtPayload = { user_name: req.user!.user_name, email: newEmail };
+            const newToken = jwt.sign(newPayload, JWT_SECRET as string, { expiresIn: "1h" });
+            res.cookie("token", newToken, { httpOnly: true, secure: true, sameSite: "none" });
+        }
+        
+        return res.json({ message: "Profile updated" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to update profile" });
+    }
+});
+
+
 loginRouter.post("/logout", async (req, res) => {
     res.clearCookie("token", {
         httpOnly: true,
@@ -396,7 +440,7 @@ loginRouter.get("/whoami", authenticateToken, async (req: AuthRequest, res: Resp
         ]);
         if(id != ""){
             res.json({
-                user_name: req.user.user_name,
+                user_name: await getUserName(req.user!.email),
                 email: req.user.email,
                 unique_id: id,
                 avatar_url,
