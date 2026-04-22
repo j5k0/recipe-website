@@ -7,7 +7,6 @@ function DeleteModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: (
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleDelete = async () => {
     if (!password) { setError("Please enter your password."); return; }
@@ -20,21 +19,21 @@ function DeleteModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      if (res.ok) { setSuccess(true); setTimeout(onDeleted, 2000); return; }
+      if (res.ok) { onDeleted(); return; }
       const data = await res.json();
       setError(data.error === "Incorrect password" ? "Incorrect password." : "Failed to delete account.");
-    } catch { setError("Something went wrong. Try again."); }
-    finally { setDeleting(false); }
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6">
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
-          <CloseIcon className="w-4 h-4" />
-        </button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
             <span className="text-xl">🗑</span>
           </div>
           <div>
@@ -42,28 +41,38 @@ function DeleteModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: (
             <p className="text-xs text-gray-400 dark:text-gray-300">This action cannot be undone</p>
           </div>
         </div>
+
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
-          Your account, recipes, and all associated data will be <span className="font-medium text-red-500">permanently deleted</span>.
+          Your account, recipes, and all associated data will be <span className="font-medium text-red-500">permanently deleted</span>. Enter your password to confirm.
         </p>
+
         <input
           type="password"
           placeholder="Enter your password"
           value={password}
           onChange={(e) => { setPassword(e.target.value); setError(null); }}
           onKeyDown={(e) => e.key === "Enter" && handleDelete()}
-          className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 mb-3"
+          className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400 mb-2"
           autoFocus
         />
         {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
-        <button
-          onClick={handleDelete}
-          disabled={deleting || success}
-          className={`w-full py-2.5 text-sm font-medium rounded-xl transition-colors ${
-            success ? "bg-lime-700 text-white" : "bg-red-500 text-white hover:bg-red-600"
-          } disabled:opacity-60`}
-        >
-          {success ? "Account deleted" : deleting ? "Deleting…" : "Delete account"}
-        </button>
+
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
+          >
+            {deleting ? "Deleting…" : "Confirm delete"}
+          </button>
+        </div>
       </div>
     </div>
   );
