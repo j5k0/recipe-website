@@ -133,6 +133,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [savingRecipe, setSavingRecipe] = useState(false);
+  const [deletingRecipe, setDeletingRecipe] = useState(false);
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -204,7 +206,10 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   };
 
   const handleSaveRecipe = async () => {
+    if (savingRecipe) return;
+
     try {
+      setSavingRecipe(true);
       const formData = new FormData();
       formData.append("title", editTitle);
       formData.append("description", editDescription);
@@ -240,13 +245,17 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     } catch (err) {
       console.error("Error saving recipe:", err);
       alert(err instanceof Error ? err.message : "Failed to save recipe");
+    } finally {
+      setSavingRecipe(false);
     }
   };
 
   const handleDeleteRecipe = async () => {
+    if (deletingRecipe) return;
     if (!confirm("Are you sure you want to delete this recipe?")) return;
 
     try {
+      setDeletingRecipe(true);
       const response = await fetch(api(`/recipes/${recipe.id}`), {
         method: "DELETE",
       });
@@ -258,6 +267,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     } catch (err) {
       console.error("Error deleting recipe:", err);
       alert("Failed to delete recipe");
+    } finally {
+      setDeletingRecipe(false);
     }
   };
 
@@ -348,8 +359,12 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
               <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600">
                 Edit
               </button>
-              <button onClick={handleDeleteRecipe} className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors dark:bg-red-500 dark:hover:bg-red-600">
-                Delete
+              <button
+                onClick={handleDeleteRecipe}
+                disabled={deletingRecipe}
+                className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-red-500 dark:hover:bg-red-600"
+              >
+                {deletingRecipe ? "Deleting..." : "Delete"}
               </button>
             </>
           ) : null}
@@ -429,13 +444,15 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
               <div className="flex gap-3">
                 <button
                   onClick={handleSaveRecipe}
-                  className="flex-1 bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  disabled={savingRecipe}
+                  className="flex-1 bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
-                  Save Changes
+                  {savingRecipe ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="flex-1 bg-gray-100 text-gray-900 font-medium py-2 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                  disabled={savingRecipe}
+                  className="flex-1 bg-gray-100 text-gray-900 font-medium py-2 rounded-lg hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
