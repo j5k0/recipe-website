@@ -135,6 +135,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savingRecipe, setSavingRecipe] = useState(false);
   const [deletingRecipe, setDeletingRecipe] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -252,7 +253,6 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
   const handleDeleteRecipe = async () => {
     if (deletingRecipe) return;
-    if (!confirm("Are you sure you want to delete this recipe?")) return;
 
     try {
       setDeletingRecipe(true);
@@ -262,6 +262,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
       if (!response.ok) throw new Error("Failed to delete recipe");
 
+      setShowDeleteConfirm(false);
       onRecipeDelete(recipe.id);
       handleClose();
     } catch (err) {
@@ -348,19 +349,13 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       >
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
           {(user && user.unique_id == authorId) ?
-              editing ? (
-            <>
-              <button onClick={handleCancelEdit} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white">
-                <CloseIcon className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
+              editing ? null : (
             <>
               <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600">
                 Edit
               </button>
               <button
-                onClick={handleDeleteRecipe}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={deletingRecipe}
                 className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-red-500 dark:hover:bg-red-600"
               >
@@ -372,6 +367,43 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 <CloseIcon className="w-4 h-4" />
               </button>
         </div>
+
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center p-4 rounded-2xl bg-black/45 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                  <WarningIcon className="w-5 h-5 text-red-500 dark:text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Delete recipe</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-300">This action cannot be undone</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+                <span className="font-medium text-gray-900 dark:text-white">{recipe.title}</span> will be permanently removed from your recipes.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deletingRecipe}
+                  className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteRecipe}
+                  disabled={deletingRecipe}
+                  className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {deletingRecipe ? "Deleting..." : "Confirm delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {editing ? (
           <>
