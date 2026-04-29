@@ -29,6 +29,26 @@ cd recipe-website
 npm install
 ```
 
+### Run tests
+Backend unit tests can be run from the repository root:
+```bash
+npm test
+```
+
+Integration tests exercise multiple backend components without mocks:
+Supertest calls the Express routes, the auth middleware creates/reads the
+JWT cookie, and the route handlers use the real PostgreSQL `pool`.
+
+Run them against a separate test database, never a production database:
+```powershell
+$env:TEST_DB_URL="postgres://USER:PASSWORD@HOST:PORT/TEST_DATABASE"
+$env:JWT_SECRET="integration-test-secret"
+npm run test:integration
+```
+
+Before running integration tests, apply the backend schema and migrations to
+that test database, including `user_notification_preferences`.
+
 ### Run the backend
 ```bash
 cd packages/backend
