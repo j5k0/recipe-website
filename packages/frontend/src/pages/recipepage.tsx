@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
 import { SortDropdown, type SortOption } from "../components/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
@@ -20,7 +21,9 @@ interface Recipe {
   id: string; title: string; description: string;
   created_at: string; image: string | null; tags?: Tag[];
   average_rating?: number | null;
+  upvote_count?: number;
 }
+interface UpvoteSummary { vote_count: number; user_vote: number; has_upvoted: boolean; has_downvoted: boolean; }
 
 const TAG_EMOJIS: Record<string, string> = {
   Meat: "🥩", Salad: "🥗", Vegetarian: "🥦", Seafood: "🐟",
@@ -136,10 +139,17 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [savingRecipe, setSavingRecipe] = useState(false);
   const [deletingRecipe, setDeletingRecipe] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [upvoteCount, setUpvoteCount] = useState(recipe.upvote_count ?? 0);
+  const [userVote, setUserVote] = useState<0 | 1 | -1>(0);
+  const [loadingVote, setLoadingVote] = useState(true);
+  const [submittingVote, setSubmittingVote] = useState(false);
   const { user } = useAuth();
+  const hasUpvoted = userVote === 1;
+  const hasDownvoted = userVote === -1;
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 10);
@@ -182,6 +192,27 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
     return () => { clearTimeout(t); document.body.style.overflow = ""; };
   }, [recipe.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setUpvoteCount(recipe.upvote_count ?? 0);
+    setUserVote(0);
+    setLoadingVote(true);
+
+    fetch(api(`/recipes/${recipe.id}/upvote`), { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((data: UpvoteSummary | null) => {
+        if (cancelled || !data) return;
+        setUpvoteCount(data.vote_count);
+        setUserVote(data.user_vote as 0 | 1 | -1);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingVote(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [recipe.id, user?.email]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
@@ -325,6 +356,40 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     }
   };
 
+  const handleVote = async (voteValue: 1 | -1 | 0) => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    if (submittingVote) return;
+    if ((voteValue === 1 && userVote === 1) || (voteValue === -1 && userVote === -1)) {
+      voteValue = 0;
+    }
+
+    try {
+      setSubmittingVote(true);
+      const response = await fetch(api(`/recipes/${recipe.id}/vote`), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vote_value: voteValue }),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit vote");
+
+      const data: UpvoteSummary = await response.json();
+      setUpvoteCount(data.vote_count);
+      setUserVote(data.user_vote as 0 | 1 | -1);
+      onRecipeUpdate({ ...recipe, upvote_count: data.vote_count });
+    } catch (err) {
+      console.error("Error submitting vote:", err);
+      alert("Failed to submit vote");
+    } finally {
+      setSubmittingVote(false);
+    }
+  };
+
   const currentImage = imagePreview || recipe.image;
 
   return (
@@ -399,6 +464,46 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
                 >
                   {deletingRecipe ? "Deleting..." : "Confirm delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLoginPrompt && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center p-4 rounded-2xl bg-black/45 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Log in required</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-300">Sign in to vote on recipes</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+                Please log in to your account to vote on this recipe.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLoginPrompt(false);
+                    handleClose();
+                  }}
+                  className="flex-1 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                >
+                  Go to login
                 </button>
               </div>
             </div>
@@ -512,11 +617,49 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 </div>
               )}
               <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
-              {recipe.created_at && (
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
-                  {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                </p>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                {recipe.created_at && (
+                  <p className="text-xs text-gray-400 uppercase tracking-wider dark:text-gray-300">
+                    {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                  </p>
+                )}
+                <div className="inline-flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleVote(1)}
+                    disabled={loadingVote || submittingVote}
+                    aria-pressed={hasUpvoted}
+                    title={hasUpvoted ? "Remove upvote" : "Upvote recipe"}
+                    className={`inline-flex h-10 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                      hasUpvoted
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:text-gray-900 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+
+                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                    <span className="tabular-nums">{upvoteCount}</span>
+                    <span>{loadingVote ? "Loading votes..." : hasUpvoted ? "Upvoted" : hasDownvoted ? "Downvoted" : "Vote"}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleVote(-1)}
+                    disabled={loadingVote || submittingVote}
+                    aria-pressed={hasDownvoted}
+                    title={hasDownvoted ? "Remove downvote" : "Downvote recipe"}
+                    className={`inline-flex h-10 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                      hasDownvoted
+                        ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:text-gray-900 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
               <div className="h-px bg-gray-100 mb-5 dark:bg-gray-700" />
               {recipe.description && (
                 <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
