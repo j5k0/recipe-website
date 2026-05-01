@@ -7,6 +7,9 @@ export interface Recipe{
     created_at: string;
     image: string | null;
     average_rating?: number | null;
+    author_id?: string;
+    author_name?: string;
+    author_avatar_url?: string | null;
 }
 
 export interface RecipeReview {

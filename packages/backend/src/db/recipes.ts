@@ -40,6 +40,9 @@ export async function getAllRecipes(): Promise<Recipe[]> {
   const { rows } = await pool.query<Recipe>(`
         SELECT 
             r.*,
+            u.id AS author_id,
+            u.user_name AS author_name,
+            u.avatar_url AS author_avatar_url,
             COALESCE(
                 json_agg(json_build_object('id', t.id, 'name', t.name))
                 FILTER (WHERE t.id IS NOT NULL), '[]'
@@ -50,9 +53,10 @@ export async function getAllRecipes(): Promise<Recipe[]> {
                 WHERE recipe_id = r.id
             ) AS average_rating
         FROM recipes r
+        LEFT JOIN users u ON u.id = r.created_by
         LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
         LEFT JOIN tags t ON t.id = rt.tag_id
-        GROUP BY r.id
+        GROUP BY r.id, u.id, u.user_name, u.avatar_url
         ORDER BY r.created_at DESC
     `);
   return rows;
@@ -237,6 +241,9 @@ export async function updateRecipe(recipeId: string, input: {
   const { rows: updatedRows } = await pool.query<Recipe>(
     `SELECT
       r.*,
+      u.id AS author_id,
+      u.user_name AS author_name,
+      u.avatar_url AS author_avatar_url,
       COALESCE(
         json_agg(json_build_object('id', t.id, 'name', t.name))
         FILTER (WHERE t.id IS NOT NULL), '[]'
@@ -247,10 +254,11 @@ export async function updateRecipe(recipeId: string, input: {
         WHERE recipe_id = r.id
       ) AS average_rating
     FROM recipes r
+    LEFT JOIN users u ON u.id = r.created_by
     LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
     LEFT JOIN tags t ON t.id = rt.tag_id
     WHERE r.id = $1
-    GROUP BY r.id`,
+    GROUP BY r.id, u.id, u.user_name, u.avatar_url`,
     [recipeId],
   );
 
