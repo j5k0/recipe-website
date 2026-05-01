@@ -16,6 +16,8 @@ interface Recipe {
   image: string | null;
   tags: Tag[];
   created_at: string;
+  author_name?: string;
+  author_avatar_url?: string | null;
 }
 
 const TAG_EMOJIS: Record<string, string> = {
@@ -91,9 +93,24 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         {recipe.description && (
           <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 dark:text-gray-300">{recipe.description}</p>
         )}
-        <div className="mt-4 flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200 dark:text-gray-500 dark:group-hover:text-white">
-          <span className="uppercase tracking-widest font-medium">View recipe</span>
-          <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {recipe.author_avatar_url ? (
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+                className="w-6 h-6 rounded-full object-cover" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
+                {recipe.author_name?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {recipe.author_name || "Unknown"}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200 dark:text-gray-500 dark:group-hover:text-white">
+            <span className="uppercase tracking-widest font-medium">View recipe</span>
+            <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
+          </div>
         </div>
       </div>
     </button>
@@ -176,11 +193,29 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             </div>
           )}
           <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
-          {recipe.created_at && (
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
-              {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          )}
+          
+          {/* Author info */}
+          <div className="flex items-center gap-2 mb-4">
+            {recipe.author_avatar_url ? (
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+                className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-sm text-gray-500">
+                {recipe.author_name?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {recipe.author_name || "Unknown"}
+              </p>
+              {recipe.created_at && (
+                <p className="text-xs text-gray-400 dark:text-gray-300">
+                  {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              )}
+            </div>
+          </div>
+          
           <div className="h-px bg-gray-100 mb-5 dark:bg-gray-700" />
           {recipe.description && (
             <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
