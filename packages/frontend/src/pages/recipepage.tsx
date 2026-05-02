@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { ExpandArrow, CloseIcon, WarningIcon } from "../assets";
+import { CloseIcon, WarningIcon } from "../assets";
 import { SortDropdown, type SortOption } from "../components/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
