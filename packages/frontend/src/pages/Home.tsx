@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext"
 
@@ -100,6 +101,7 @@ function FeaturedCard({
   recipe: Recipe;
   delay?: number;
 }) {
+  const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const navigate = useNavigate();
   return (
@@ -134,12 +136,12 @@ function FeaturedCard({
       <div className="p-5">
         {recipe.tags && recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {recipe.tags.slice(0, 2).map((t) => (
+            {recipe.tags.slice(0, 2).map((tag) => (
               <span
-                key={t.id}
+                key={tag.id}
                 className="text-[10px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full dark:text-gray-300 dark:bg-gray-700"
               >
-                {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                {TAG_EMOJIS[tag.name] ?? ""} {t(`tags.${tag.name}`, tag.name)}
               </span>
             ))}
           </div>
@@ -158,6 +160,7 @@ function FeaturedCard({
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -256,7 +259,7 @@ export default function Home() {
         >
           <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-1.5 mb-8 dark:bg-white/10">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest dark:text-gray-300">
-              Community Recipes
+              {t("home.badge")}
             </span>
           </div>
 
@@ -268,8 +271,9 @@ export default function Home() {
               lineHeight: 1.05,
             }}
           >
-            Food that tells
-            <br />a story.
+            {t("home.hero").split("\n").map((line, i, arr) => (
+              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+            ))}
           </h1>
 
           <p
@@ -280,14 +284,13 @@ export default function Home() {
               maxWidth: 440,
             }}
           >
-            Discover and share recipes from a community of passionate cooks.
-            Every dish has a story — find yours.
+            {t("home.heroSub")}
           </p>
 
           {/* Search bar */}
           <form
             onSubmit={handleSearch}
-            className="flex items-center mx-auto mb-0 rounded-full border border-gray-200 bg-white py-[5px] pr-[5px] pl-5 
+            className="flex items-center mx-auto mb-0 rounded-full border border-gray-200 bg-white py-[5px] pr-[5px] pl-5
               shadow-[0_2px_16px_rgba(0,0,0,.06)] dark:border-gray-700 dark:bg-gray-900 dark:shadow-[0_2px_20px_rgba(0,0,0,.35)]"
             style={{
               maxWidth: 480,
@@ -297,14 +300,14 @@ export default function Home() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search recipes, ingredients…"
+              placeholder={t("home.searchPlaceholder")}
               className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
             />
             <button
               type="submit"
               className="shrink-0 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-full hover:bg-gray-700 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
-              Search
+              {t("home.search")}
             </button>
           </form>
         </div>
@@ -315,7 +318,7 @@ export default function Home() {
           style={{ animation: "floatB 2.5s ease-in-out infinite" }}
         >
           <span className="text-[10px] text-gray-400 uppercase tracking-widest dark:text-gray-500">
-            Scroll
+            {t("home.scroll")}
           </span>
           <svg
             width="14"
@@ -338,24 +341,24 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="reveal text-center mb-10">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">
-              Browse by category
+              {t("home.browseByCategoryLabel")}
             </p>
             <h2
               className="text-3xl font-semibold text-gray-900 dark:text-white"
               style={{ letterSpacing: "-0.01em" }}
             >
-              What are you craving?
+              {t("home.browseByCategory")}
             </h2>
           </div>
           <div className="reveal reveal-delay-1 flex flex-wrap gap-2.5 justify-center">
-            {displayTags.map((t) => (
+            {displayTags.map((tag) => (
               <button
-                key={t.id}
-                onClick={() => navigate(`/recipes?tag=${t.id}`)}
+                key={tag.id}
+                onClick={() => navigate(`/recipes?tag=${tag.id}`)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-600 bg-white hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all
                  dark:border-gray-700 dark:text-gray-300 dark:bg-gray-800 dark:hover:border-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
               >
-                {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                {TAG_EMOJIS[tag.name] ?? ""} {t(`tags.${tag.name}`, tag.name)}
               </button>
             ))}
             <button
@@ -363,7 +366,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-dashed border-gray-300 text-sm text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-all
                 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:hover:text-white"
             >
-              View all →
+              {t("home.viewAll")}
             </button>
           </div>
         </div>
@@ -376,20 +379,20 @@ export default function Home() {
             <div className="reveal flex items-end justify-between mb-8 flex-wrap gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 dark:text-gray-300">
-                  Latest additions
+                  {t("home.latestLabel")}
                 </p>
                 <h2
                   className="text-3xl font-semibold text-gray-900 dark:text-white"
                   style={{ letterSpacing: "-0.01em" }}
                 >
-                  Fresh from the community
+                  {t("home.latest")}
                 </h2>
               </div>
               <button
                 onClick={() => navigate("/recipes")}
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-white"
               >
-                See all recipes
+                {t("home.seeAll")}
                 <svg
                   width="14"
                   height="14"
@@ -428,21 +431,20 @@ export default function Home() {
             />
             <div className="relative">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">
-                Ready to find your next favorite dish?
+                {t("home.ctaLabel")}
               </p>
               <h2
                 className="text-2xl font-semibold text-white leading-snug"
                 style={{ maxWidth: 550 }}
               >
-                Dive into our collection of community recipes and start cooking
-                something amazing today!
+                {t("home.ctaText")}
               </h2>
             </div>
             <button
               onClick={() => navigate("/recipes")}
               className="shrink-0 px-7 py-3.5 bg-white text-gray-900 font-semibold text-sm rounded-full hover:bg-gray-100 transition-colors relative"
             >
-              Browse recipes
+              {t("home.browseRecipes")}
             </button>
           </div>
         </div>

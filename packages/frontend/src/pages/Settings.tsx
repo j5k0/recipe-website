@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../AuthContext";
+import { setLanguage, LANGUAGES, type LanguageCode } from "../i18n";
 
 function Toggle({
   enabled,
@@ -24,6 +26,7 @@ function Toggle({
 }
 
 export default function Settings() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
 
   const [notifications, setNotifications] = useState(true);
@@ -36,6 +39,8 @@ export default function Settings() {
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const currentLang = i18n.language as LanguageCode;
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -77,15 +82,21 @@ export default function Settings() {
     setTimeout(() => setSaveStatus("idle"), 2500);
   };
 
+  const saveLabel =
+    saveStatus === "saving" ? t("settings.saving") :
+    saveStatus === "saved" ? t("settings.saved") :
+    saveStatus === "error" ? t("settings.failedToSave") :
+    t("settings.saveChanges");
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16 dark:bg-gray-900">
       <div className="max-w-2xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight dark:text-white">
-            Settings
+            {t("settings.title")}
           </h1>
           <p className="text-sm text-gray-400 mt-1 dark:text-gray-300">
-            Customize your experience
+            {t("settings.subtitle")}
           </p>
         </div>
 
@@ -93,20 +104,20 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Contact Preferences
+              {t("settings.contactPreferences")}
             </p>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-700">
             {[
               {
-                label: "Email notifications",
-                sub: "Receive important updates about your account and recipes via email",
+                label: t("settings.emailNotifications"),
+                sub: t("settings.emailNotificationsSub"),
                 value: emailNotifications,
                 toggle: () => setEmailNotifications((v) => !v),
               },
               {
-                label: "Marketing emails",
-                sub: "Get tips, featured recipes, and news from the team",
+                label: t("settings.marketingEmails"),
+                sub: t("settings.marketingEmailsSub"),
                 value: marketingEmails,
                 toggle: () => setMarketingEmails((v) => !v),
               },
@@ -131,26 +142,26 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Notifications
+              {t("settings.notifications")}
             </p>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-700">
             {[
               {
-                label: "Push notifications",
-                sub: "Receive alerts in your browser",
+                label: t("settings.pushNotifications"),
+                sub: t("settings.pushNotificationsSub"),
                 value: notifications,
                 toggle: () => setNotifications((v) => !v),
               },
               {
-                label: "New recipes",
-                sub: "When someone shares a new recipe",
+                label: t("settings.newRecipes"),
+                sub: t("settings.newRecipesSub"),
                 value: newRecipes,
                 toggle: () => setNewRecipes((v) => !v),
               },
               {
-                label: "Recipe review",
-                sub: "When someone posts a review on your recipe",
+                label: t("settings.recipeReview"),
+                sub: t("settings.recipeReviewSub"),
                 value: weeklyDigest,
                 toggle: () => setWeeklyDigest((v) => !v),
               },
@@ -175,16 +186,16 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Privacy
+              {t("settings.privacy")}
             </p>
           </div>
           <div className="flex items-center justify-between px-6 py-4">
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                Public profile
+                {t("settings.publicProfile")}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-300">
-                Allow others to see your shared recipes
+                {t("settings.publicProfileSub")}
               </p>
             </div>
             <Toggle
@@ -198,17 +209,49 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Appearance
+              {t("settings.appearance")}
             </p>
           </div>
           <div className="flex items-center justify-between px-6 py-4">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Dark mode</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t("settings.darkMode")}</p>
               <p className="text-xs text-gray-400 dark:text-gray-300">
-                Switch the app to a darker theme
+                {t("settings.darkModeSub")}
               </p>
             </div>
             <Toggle enabled={darkMode} onChange={() => setDarkMode((v) => !v)} />
+          </div>
+        </div>
+
+        {/* Language */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
+              {t("settings.language")}
+            </p>
+          </div>
+          <div className="flex items-center justify-between px-6 py-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t("settings.language")}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-300">
+                {t("settings.languageSub")}
+              </p>
+            </div>
+            <div className="flex items-center rounded-full border border-gray-200 overflow-hidden dark:border-gray-700">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    currentLang === lang.code
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                      : "text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {t(`language.${lang.code}`)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -218,13 +261,7 @@ export default function Settings() {
           disabled={saveStatus === "saving" || !user}
           className="w-full py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
         >
-          {saveStatus === "saving"
-            ? "Saving…"
-            : saveStatus === "saved"
-            ? "Saved"
-            : saveStatus === "error"
-            ? "Failed to save"
-            : "Save changes"}
+          {saveLabel}
         </button>
       </div>
     </div>

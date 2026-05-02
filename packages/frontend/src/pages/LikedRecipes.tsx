@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { DiscoverIcon, CloseIcon, ExpandArrow } from "../assets";
 
 const API_BASE =
@@ -24,14 +25,17 @@ const TAG_EMOJIS: Record<string, string> = {
   Pizza: "🍕", Vegan: "🌱", Spicy: "🌶️", Quick: "⚡",
 };
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days}d ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
+function useTimeAgo() {
+  const { t } = useTranslation();
+  return (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return t("recipes.today");
+    if (days === 1) return t("recipes.yesterday");
+    if (days < 30) return `${days}d ago`;
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
+  };
 }
 
 function CardSkeleton() {
@@ -51,6 +55,8 @@ function CardSkeleton() {
 }
 
 function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () => void; index: number }) {
+  const { t } = useTranslation();
+  const timeAgo = useTimeAgo();
   const [imgError, setImgError] = useState(false);
   return (
     <button
@@ -78,9 +84,9 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
       <div className="p-5">
         {recipe.tags && recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {recipe.tags.slice(0, 3).map((t) => (
-              <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full dark:text-gray-300 dark:bg-gray-700">
-                {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
+            {recipe.tags.slice(0, 3).map((tag) => (
+              <span key={tag.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full dark:text-gray-300 dark:bg-gray-700">
+                {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{t(`tags.${tag.name}`, tag.name)}
               </span>
             ))}
           </div>
@@ -92,7 +98,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
           <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 dark:text-gray-300">{recipe.description}</p>
         )}
         <div className="mt-4 flex items-center gap-1 text-xs text-gray-300 group-hover:text-gray-900 transition-colors duration-200 dark:text-gray-500 dark:group-hover:text-white">
-          <span className="uppercase tracking-widest font-medium">View recipe</span>
+          <span className="uppercase tracking-widest font-medium">{t("recipes.viewRecipe")}</span>
           <ExpandArrow className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-1" />
         </div>
       </div>
@@ -101,6 +107,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
 }
 
 function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void }) {
+  const { t } = useTranslation();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loadingIng, setLoadingIng] = useState(true);
   const [imgError, setImgError] = useState(false);
@@ -108,7 +115,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10);
+    const timer = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
 
     fetch(api(`/recipes/${recipe.id}/ingredients`))
@@ -116,7 +123,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
       .catch(() => [])
       .then((data) => { setIngredients(data); setLoadingIng(false); });
 
-    return () => { clearTimeout(t); document.body.style.overflow = ""; };
+    return () => { clearTimeout(timer); document.body.style.overflow = ""; };
   }, [recipe.id]);
 
   useEffect(() => {
@@ -186,7 +193,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
           )}
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
-            <span>Ingredients</span>
+            <span>{t("recipes.ingredients")}</span>
             <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
           </h4>
           {loadingIng ? (
@@ -196,7 +203,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
               ))}
             </div>
           ) : ingredients.length === 0 ? (
-            <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
+            <p className="text-gray-400 text-sm italic dark:text-gray-300">{t("recipes.noIngredients")}</p>
           ) : (
             <ul className="space-y-1.5">
               {ingredients.map((ing, i) => (
@@ -222,6 +229,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
 }
 
 export default function LikedRecipes() {
+  const { t } = useTranslation();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -248,16 +256,16 @@ export default function LikedRecipes() {
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl mb-4 mx-auto">
             ❤️
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Liked Recipes</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t("liked.title")}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Log in to view the recipes you've liked while discovering.
+            {t("liked.loginPrompt")}
           </p>
           <Link
             to="/discover"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
           >
             <DiscoverIcon className="w-4 h-4" />
-            Go to Discover
+            {t("liked.goToDiscover")}
           </Link>
         </div>
       </div>
@@ -287,16 +295,16 @@ export default function LikedRecipes() {
       <div className="pt-16 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center px-6">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl mb-4 mx-auto">🍃</div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">No liked recipes yet</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t("liked.empty")}</h3>
           <p className="text-sm text-gray-400 dark:text-gray-300 mb-6">
-            Swipe right on recipes you love to save them here.
+            {t("liked.emptySub")}
           </p>
           <Link
             to="/discover"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
           >
             <DiscoverIcon className="w-4 h-4" />
-            Start Discovering
+            {t("liked.startDiscovering")}
           </Link>
         </div>
       </div>
@@ -308,9 +316,9 @@ export default function LikedRecipes() {
     <div className="min-h-screen bg-gray-50 pt-16 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Liked Recipes</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t("liked.title")}</h1>
           <p className="text-sm text-gray-400 dark:text-gray-400 mt-0.5">
-            {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} saved
+            {t("liked.saved_other", { count: recipes.length })}
           </p>
         </div>
 

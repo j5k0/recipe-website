@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, HeartIcon, ExpandArrow } from "../assets";
 
 const API_BASE =
@@ -27,6 +28,7 @@ const SWIPE_THRESHOLD = 80;
 
 // ── Recipe detail modal ─────────────────────────────────────────────
 function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () => void }) {
+  const { t } = useTranslation();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loadingIng, setLoadingIng] = useState(true);
   const [imgError, setImgError] = useState(false);
@@ -108,7 +110,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
           )}
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
-            <span>Ingredients</span>
+            <span>{t("recipes.ingredients")}</span>
             <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
           </h4>
           {loadingIng ? (
@@ -116,7 +118,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
               {[1, 2, 3].map((i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
             </div>
           ) : ingredients.length === 0 ? (
-            <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
+            <p className="text-gray-400 text-sm italic dark:text-gray-300">{t("recipes.noIngredients")}</p>
           ) : (
             <ul className="space-y-1.5">
               {ingredients.map((ing, i) => (
@@ -147,6 +149,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
   onClose: () => void;
   onSelect: (recipe: Recipe) => void;
 }) {
+  const { t } = useTranslation();
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -168,9 +171,9 @@ function LikedPanel({ recipes, onClose, onSelect }: {
       >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Liked Recipes</h2>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("discover.likedTitle")}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} this session
+              {t("discover.likedCount_other", { count: recipes.length })}
             </p>
           </div>
           <button
@@ -185,7 +188,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
           {recipes.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="text-4xl mb-3">🍃</div>
-              <p className="text-sm text-gray-400 dark:text-gray-500">No liked recipes yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t("discover.noLiked")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -237,6 +240,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
 
 // ── Main Discover component ─────────────────────────────────────────
 export default function Discover() {
+  const { t } = useTranslation();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -337,7 +341,7 @@ export default function Discover() {
           }).catch(() => {});
         }
       } else {
-        showToast("Skipped", "skip");
+        showToast(t("discover.skipped"), "skip");
       }
 
       setTimeout(advanceCard, 720);
@@ -446,7 +450,7 @@ export default function Discover() {
       <div className="pt-16 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-80 h-120 bg-white dark:bg-gray-800 rounded-3xl animate-pulse border border-gray-100 dark:border-gray-700 shadow-xl" />
-          <p className="text-sm text-gray-400">Loading recipes…</p>
+          <p className="text-sm text-gray-400">{t("discover.dragHint")}</p>
         </div>
       </div>
     );
@@ -459,12 +463,12 @@ export default function Discover() {
         <div className="text-center px-6">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            You've seen them all!
+            {t("discover.allDone")}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             {likedCount > 0
-              ? `You liked ${likedCount} recipe${likedCount !== 1 ? "s" : ""} this session`
-              : "No recipes liked this session"}
+              ? t("discover.likedCount_other", { count: likedCount })
+              : t("discover.noLiked")}
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {likedCount > 0 && (
@@ -473,19 +477,19 @@ export default function Discover() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
               >
                 <HeartIcon className="w-4 h-4" />
-                View Liked Recipes
+                {t("discover.likedTitle")}
               </button>
             )}
             <button
               onClick={() => { setCurrentIndex(0); setLikedRecipes([]); setRecipes(prev => [...prev].sort(() => Math.random() - 0.5)); }}
               className="px-5 py-2.5 bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white rounded-full text-sm font-medium hover:opacity-80 transition-opacity border border-gray-200 dark:border-gray-700"
             >
-              Start Over
+              {t("liked.startDiscovering")}
             </button>
           </div>
           {!user && likedCount > 0 && (
             <p className="mt-6 text-sm text-amber-600 dark:text-amber-400">
-              Log in to save liked recipes permanently
+              {t("liked.loginPrompt")}
             </p>
           )}
         </div>
@@ -521,9 +525,9 @@ export default function Discover() {
         {/* Header row */}
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Discover</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{t("nav.discover")}</h1>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {recipes.length - currentIndex} recipe{recipes.length - currentIndex !== 1 ? "s" : ""} left
+              {t("discover.likedCount_other", { count: recipes.length - currentIndex })}
             </p>
           </div>
           <button
@@ -536,7 +540,7 @@ export default function Discover() {
             disabled={likedCount === 0}
           >
             <HeartIcon className="w-4 h-4" />
-            {likedCount} liked
+            {likedCount} {t("discover.liked")}
           </button>
         </div>
 

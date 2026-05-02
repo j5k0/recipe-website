@@ -1,5 +1,6 @@
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Logo,
   LensIcon,
@@ -12,6 +13,7 @@ import {
 } from "../assets";
 import LoginModal from "./loginmodal.tsx";
 import { useAuth } from "../AuthContext";
+import { setLanguage, LANGUAGES, type LanguageCode } from "../i18n";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -39,6 +41,7 @@ interface Tag {
 }
 
 export default function Navigation() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
@@ -117,6 +120,8 @@ export default function Navigation() {
         : "text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
     }`;
 
+  const currentLang = i18n.language as LanguageCode;
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm dark:bg-gray-900 dark:border-gray-800">
@@ -135,7 +140,7 @@ export default function Navigation() {
               <LensIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search recipes..."
+                placeholder={t("nav.searchPlaceholder")}
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
@@ -167,31 +172,31 @@ export default function Navigation() {
                   >
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-                        Filter by tag
+                        {t("nav.filterByTag")}
                       </span>
                       {activeTags.length > 0 && (
                         <button
                           onClick={clearTags}
                           className="text-xs text-gray-400 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-white"
                         >
-                          Clear all
+                          {t("nav.clearAll")}
                         </button>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {tags.map((t) => {
-                        const active = activeTags.includes(t.id);
+                      {tags.map((tag) => {
+                        const active = activeTags.includes(tag.id);
                         return (
                           <button
-                            key={t.id}
-                            onClick={() => toggleTag(t.id)}
+                            key={tag.id}
+                            onClick={() => toggleTag(tag.id)}
                             className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
                               active
                                 ? "bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-gray-900"
                                 : "bg-white border-gray-200 text-gray-600 hover:border-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400"
                             }`}
                           >
-                            {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                            {TAG_EMOJIS[tag.name] ?? ""} {t(`tags.${tag.name}`, tag.name)}
                           </button>
                         );
                       })}
@@ -204,22 +209,40 @@ export default function Navigation() {
 
           {/* Right icons */}
           <div className="flex items-center gap-1 shrink-0">
-            <NavLink to="/recipes" title="Recipes" className={iconNavClass}>
+            <NavLink to="/recipes" title={t("nav.recipes")} className={iconNavClass}>
               <RecipesIcon className="w-4.5 h-4.5" />
             </NavLink>
-            <NavLink to="/discover" title="Discover" className={iconNavClass}>
+            <NavLink to="/discover" title={t("nav.discover")} className={iconNavClass}>
               <DiscoverIcon className="w-4.5 h-4.5" />
             </NavLink>
-<NavLink to="/about" title="About" className={iconNavClass}>
+            <NavLink to="/about" title={t("nav.about")} className={iconNavClass}>
               <InformationIcon className="w-4.5 h-4.5" />
             </NavLink>
-            <NavLink to="/settings" title="Settings" className={iconNavClass}>
+            <NavLink to="/settings" title={t("nav.settings")} className={iconNavClass}>
               <SettingsIcon className="w-4.5 h-4.5" />
             </NavLink>
+
+            {/* Language toggle */}
+            <div className="flex items-center rounded-full border border-gray-200 overflow-hidden dark:border-gray-700 ml-1">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    currentLang === lang.code
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                      : "text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+
             {user && (
                 <NavLink
                   to="/account"
-                  title="Account"
+                  title={t("nav.account")}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded-full transition-colors ${
                       isActive
@@ -247,10 +270,10 @@ export default function Navigation() {
                 </NavLink>
             )}
             {!user && (
-                <button onClick={() => setLoginOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1 
+                <button onClick={() => setLoginOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors ml-1
                 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
                     <UserIcon className="w-4 h-4" />
-                Login</button>
+                {t("nav.login")}</button>
             )}
           </div>
         </div>
