@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext"
+import { getPrimaryRecipeImage } from "../utils/recipeImages";
 
 
 const TAG_EMOJIS: Record<string, string> = {
@@ -35,6 +36,7 @@ interface Recipe {
   description: string;
   created_at: string;
   image: string | null;
+  images?: string[];
   tags?: Tag[];
   author_name?: string;
   author_avatar_url?: string | null;
@@ -104,6 +106,7 @@ function FeaturedCard({
 }) {
   const [imgError, setImgError] = useState(false);
   const navigate = useNavigate();
+  const primaryImage = getPrimaryRecipeImage(recipe);
   return (
     <button
       onClick={() => navigate("/recipes")}
@@ -112,9 +115,9 @@ function FeaturedCard({
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="aspect-4/3 overflow-hidden relative bg-gray-50 dark:bg-gray-700">
-        {recipe.image && !imgError ? (
+        {primaryImage && !imgError ? (
           <img
-            src={recipe.image}
+            src={primaryImage}
             alt={recipe.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}

@@ -9,10 +9,9 @@ import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from "./auth";
 import bcrypt from "bcrypt";
-import { User, JwtPayload, AuthRequest } from "./types";
-import { Router, Request, Response, NextFunction } from "express";
+import { JwtPayload, AuthRequest } from "./types";
+import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { error } from "console";
 
 
 const recipeRouter = express.Router();
@@ -27,6 +26,7 @@ const reviewSchema = z.object({
 
 //Image size and format validation
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_RECIPE_IMAGES = 5;
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -44,22 +44,76 @@ const upload = multer({
   },
 });
 
-function uploadRecipeImage(req: Request, res:Response, next: NextFunction) {
-  upload.single("image")(req, res, (err: unknown) => {
-    if(!err) {
-      return next();
-    }
+function handleUploadError(err: unknown, res: Response, next: NextFunction) {
+  if(!err) {
+    return next();
+  }
 
-    if(err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({ error: "Image is too large. Maximum size is 5MB." });
-    }
+  if(err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ error: "Image is too large. Maximum size is 5MB." });
+  }
 
-    if(err instanceof Error) {
-      return res.status(400).json({ error: err.message });
-    }
+  if(err instanceof multer.MulterError && err.code === "LIMIT_UNEXPECTED_FILE") {
+    return res.status(400).json({ error: `You can upload up to ${MAX_RECIPE_IMAGES} recipe images.` });
+  }
 
-    return res.status(400).json({ error: "Invalid image upload." });
+  if(err instanceof Error) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  return res.status(400).json({ error: "Invalid image upload." });
+}
+
+function uploadRecipeImages(req: Request, res:Response, next: NextFunction) {
+  upload.fields([
+    { name: "images", maxCount: MAX_RECIPE_IMAGES },
+    { name: "image", maxCount: 1 },
+  ])(req, res, (err: unknown) => {
+    return handleUploadError(err, res, next);
   })
+}
+
+function uploadSingleImage(req: Request, res:Response, next: NextFunction) {
+  upload.single("image")(req, res, (err: unknown) => {
+    return handleUploadError(err, res, next);
+  })
+}
+
+function getRecipeUploadFiles(req: Request): Express.Multer.File[] {
+  const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+  return [
+    ...(files?.images ?? []),
+    ...(files?.image ?? []),
+  ].slice(0, MAX_RECIPE_IMAGES);
+}
+
+async function uploadRecipeFiles(files: Express.Multer.File[]): Promise<string[]> {
+  const uploads = files.map(async (file, index) => {
+    const fileName = `${Date.now()}-${index}-${file.originalname}`;
+
+    const { error } = await supabase.storage
+      .from("recipes")
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+      });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+      .from("recipes")
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  });
+
+  return Promise.all(uploads);
+}
+
+function getBodyArray(value: unknown): string[] {
+  return ([] as unknown[])
+    .concat(value || [])
+    .map(String)
+    .filter((item) => item.trim().length > 0);
 }
 
 function getOptionalUserEmail(req: Request): string | null {
@@ -75,34 +129,13 @@ function getOptionalUserEmail(req: Request): string | null {
 }
 
 // Route for creating a new recipe
-// Uses multer middleware to handle a single file upload with the field name "image"
-recipeRouter.post("/recipes", authenticateToken, uploadRecipeImage, async (req: AuthRequest, res) => {
+recipeRouter.post("/recipes", authenticateToken, uploadRecipeImages, async (req: AuthRequest, res) => {
   try {
     const { title, description } = req.body;
     const email = req.user!.email;
-    const ingredients = [].concat(req.body.ingredients || []);
-    const selectedTags = [].concat(req.body.selectedTags || []);
-
-    let imageUrl: string | null = null;
-
-
-    if (req.file) {
-      const fileName = `${Date.now()}-${req.file.originalname}`;
-
-      const { error } = await supabase.storage
-        .from("recipes")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-        });
-
-      if (error) throw error;
-
-      const { data } = supabase.storage
-        .from("recipes")
-        .getPublicUrl(fileName);
-
-      imageUrl = data.publicUrl;
-    }
+    const ingredients = getBodyArray(req.body.ingredients);
+    const selectedTags = getBodyArray(req.body.selectedTags);
+    const images = await uploadRecipeFiles(getRecipeUploadFiles(req));
 
     const recipe = await createRecipe({
       title,
@@ -110,7 +143,7 @@ recipeRouter.post("/recipes", authenticateToken, uploadRecipeImage, async (req: 
       ingredients,
       selectedTags,
       email,
-      image: imageUrl,
+      images,
     });
 
     res.status(201).json(recipe);
@@ -245,40 +278,21 @@ recipeRouter.get("/tags", async (req, res) => {
   }
 });
 
-recipeRouter.put("/recipes/:id", uploadRecipeImage, async (req, res) => {
+recipeRouter.put("/recipes/:id", uploadRecipeImages, async (req, res) => {
   try {
     const recipeId = req.params.id;
     const { title, description } = req.body;
-    const ingredients = req.body.ingredients ? [].concat(req.body.ingredients) : undefined;
-    const selectedTags = req.body.selectedTags ? [].concat(req.body.selectedTags) : undefined;
-
-    let imageUrl: string | null | undefined = undefined;
-
-    // Only handle image if one was provided
-    if (req.file) {
-      const fileName = `${Date.now()}-${req.file.originalname}`;
-
-      const { error } = await supabase.storage
-        .from("recipes")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-        });
-
-      if (error) throw error;
-
-      const { data } = supabase.storage
-        .from("recipes")
-        .getPublicUrl(fileName);
-
-      imageUrl = data.publicUrl;
-    }
+    const ingredients = req.body.ingredients ? getBodyArray(req.body.ingredients) : undefined;
+    const selectedTags = req.body.selectedTags ? getBodyArray(req.body.selectedTags) : undefined;
+    const uploadedFiles = getRecipeUploadFiles(req);
+    const images = uploadedFiles.length > 0 ? await uploadRecipeFiles(uploadedFiles) : undefined;
 
     const recipe = await updateRecipe(recipeId, {
       title,
       description,
       ingredients,
       selectedTags,
-      ...(imageUrl !== undefined && { image: imageUrl }),
+      ...(images !== undefined && { images }),
     });
 
     res.json(recipe);
@@ -331,7 +345,7 @@ recipeRouter.get("/user/liked", authenticateToken, async (req: AuthRequest, res:
   }
 });
 
-recipeRouter.post("/user/avatar", authenticateToken, uploadRecipeImage, async (req: AuthRequest, res: Response) => {
+recipeRouter.post("/user/avatar", authenticateToken, uploadSingleImage, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image provided" });

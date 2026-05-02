@@ -6,6 +6,7 @@ export interface Recipe{
     tags: string[];
     created_at: string;
     image: string | null;
+    images: string[];
     average_rating?: number | null;
     author_id?: string;
     author_name?: string;

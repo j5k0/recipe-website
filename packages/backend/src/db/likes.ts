@@ -22,7 +22,18 @@ export async function getUserLikedRecipes(userEmail: string): Promise<Recipe[]> 
       COALESCE(
         json_agg(json_build_object('id', t.id, 'name', t.name))
         FILTER (WHERE t.id IS NOT NULL), '[]'
-      ) AS tags
+      ) AS tags,
+      COALESCE(
+        (
+          SELECT array_agg(ri.image_url ORDER BY ri.sort_order)
+          FROM recipe_images ri
+          WHERE ri.recipe_id = r.id
+        ),
+        CASE
+          WHEN r.image IS NOT NULL THEN ARRAY[r.image]::text[]
+          ELSE ARRAY[]::text[]
+        END
+      ) AS images
     FROM recipes r
     JOIN user_favorites uf ON uf.recipe_id = r.id
     LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
