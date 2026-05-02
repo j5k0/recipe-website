@@ -15,6 +15,8 @@ interface Recipe {
   image: string | null;
   tags: Tag[];
   created_at: string;
+  author_name?: string;
+  author_avatar_url?: string | null;
 }
 
 const TAG_EMOJIS: Record<string, string> = {
@@ -98,6 +100,22 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             </div>
           )}
           <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
+          
+          {/* Author info in modal */}
+          <div className="flex items-center gap-2 mb-4">
+            {recipe.author_avatar_url ? (
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+                className="w-6 h-6 rounded-full object-cover" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
+                {recipe.author_name?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {recipe.author_name || "Unknown"}
+            </p>
+          </div>
+          
           {recipe.created_at && (
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
               {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
@@ -215,6 +233,11 @@ function LikedPanel({ recipes, onClose, onSelect }: {
                       {recipe.tags && recipe.tags.length > 0 && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate dark:text-gray-500">
                           {recipe.tags.slice(0, 2).map((t) => `${TAG_EMOJIS[t.name] ?? ""} ${t.name}`).join(" · ")}
+                        </p>
+                      )}
+                      {recipe.author_name && (
+                        <p className="text-xs text-gray-400 mt-0.5 truncate dark:text-gray-500">
+                          by {recipe.author_name}
                         </p>
                       )}
                     </div>
@@ -573,6 +596,9 @@ export default function Discover() {
                 {nextRecipe.description && (
                   <p className="text-sm text-white/80 line-clamp-2">{nextRecipe.description}</p>
                 )}
+                {nextRecipe.author_name && (
+                  <p className="text-xs text-white/70 mt-1">by {nextRecipe.author_name}</p>
+                )}
               </div>
             </div>
           )}
@@ -680,6 +706,9 @@ export default function Discover() {
                 </h2>
                 {currentRecipe.description && (
                   <p className="text-sm text-white/80 line-clamp-2">{currentRecipe.description}</p>
+                )}
+                {currentRecipe.author_name && (
+                  <p className="text-xs text-white/70 mt-1">by {currentRecipe.author_name}</p>
                 )}
               </div>
             </div>

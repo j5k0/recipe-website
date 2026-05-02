@@ -36,6 +36,8 @@ interface Recipe {
   created_at: string;
   image: string | null;
   tags?: Tag[];
+  author_name?: string;
+  author_avatar_url?: string | null;
 }
 
 // Static floating emojis - no interaction, pure CSS animation
@@ -151,6 +153,21 @@ function FeaturedCard({
           <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 dark:text-gray-300">
             {recipe.description}
           </p>
+        )}
+        {(recipe.author_name || recipe.author_avatar_url !== undefined) && (
+          <div className="mt-3 flex items-center gap-2">
+            {recipe.author_avatar_url ? (
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+                className="w-5 h-5 rounded-full object-cover" />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-[10px] text-gray-500">
+                {recipe.author_name?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {recipe.author_name || "Unknown"}
+            </span>
+          </div>
         )}
       </div>
     </button>
