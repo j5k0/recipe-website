@@ -8,7 +8,7 @@ import Account from "./pages/Account";
 import Settings from "./pages/Settings";
 import Discover from "./pages/Discover";
 import LikedRecipes from "./pages/LikedRecipes";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./AuthContext"
 
 function App() {
@@ -25,6 +25,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/liked" element={<LikedRecipes />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
