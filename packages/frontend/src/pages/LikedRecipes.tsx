@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { DiscoverIcon, CloseIcon, ExpandArrow } from "../assets";
+import { RecipeImageGallery } from "../components/RecipeImageGallery";
+import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -14,6 +16,7 @@ interface Recipe {
   title: string;
   description: string;
   image: string | null;
+  images?: string[];
   tags: Tag[];
   created_at: string;
   author_name?: string;
@@ -54,6 +57,7 @@ function CardSkeleton() {
 
 function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () => void; index: number }) {
   const [imgError, setImgError] = useState(false);
+  const primaryImage = getPrimaryRecipeImage(recipe);
   return (
     <button
       onClick={onClick}
@@ -61,9 +65,9 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="aspect-4/3 overflow-hidden relative bg-gray-50 dark:bg-gray-700">
-        {recipe.image && !imgError ? (
+        {primaryImage && !imgError ? (
           <img
-            src={recipe.image}
+            src={primaryImage}
             alt={recipe.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
@@ -174,7 +178,8 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
           <CloseIcon className="w-4 h-4" />
         </button>
 
-        <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
+        <RecipeImageGallery images={getRecipeImages(recipe)} title={recipe.title} />
+        <div className="hidden">
           {recipe.image && !imgError ? (
             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
           ) : (

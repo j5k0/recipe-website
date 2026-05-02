@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CloseIcon, HeartIcon, ExpandArrow } from "../assets";
+import { RecipeImageGallery } from "../components/RecipeImageGallery";
+import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -13,6 +15,7 @@ interface Recipe {
   title: string;
   description: string;
   image: string | null;
+  images?: string[];
   tags: Tag[];
   created_at: string;
   author_name?: string;
@@ -82,7 +85,8 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
         >
           <CloseIcon className="w-4 h-4" />
         </button>
-        <div className="aspect-video overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
+        <RecipeImageGallery images={getRecipeImages(recipe)} title={recipe.title} className="aspect-video overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700" />
+        <div className="hidden">
           {recipe.image && !imgError ? (
             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
           ) : (
@@ -209,6 +213,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
             <div className="space-y-2">
               {recipes.map((recipe, i) => {
                 const imgError = imgErrors[recipe.id];
+                const primaryImage = getPrimaryRecipeImage(recipe);
                 return (
                   <button
                     key={recipe.id}
@@ -217,9 +222,9 @@ function LikedPanel({ recipes, onClose, onSelect }: {
                     style={{ animation: `itemFadeIn 200ms ease ${i * 40}ms both` }}
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
-                      {recipe.image && !imgError ? (
+                      {primaryImage && !imgError ? (
                         <img
-                          src={recipe.image}
+                          src={primaryImage}
                           alt={recipe.title}
                           className="w-full h-full object-cover"
                           onError={() => setImgErrors((p) => ({ ...p, [recipe.id]: true }))}
@@ -433,6 +438,8 @@ export default function Discover() {
   // ── Derived values ─────────────────────────────────────────────
   const currentRecipe = recipes[currentIndex];
   const nextRecipe = recipes[currentIndex + 1];
+  const currentRecipeImage = currentRecipe ? getPrimaryRecipeImage(currentRecipe) : null;
+  const nextRecipeImage = nextRecipe ? getPrimaryRecipeImage(nextRecipe) : null;
   const isDone = !loading && currentIndex >= recipes.length;
   const likedCount = likedRecipes.length;
 
@@ -576,8 +583,8 @@ export default function Discover() {
                 zIndex: 1,
               }}
             >
-              {nextRecipe.image ? (
-                <img src={nextRecipe.image} alt="" className="w-full h-full object-cover" />
+              {nextRecipeImage ? (
+                <img src={nextRecipeImage} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-600">🍽</div>
               )}
@@ -615,9 +622,9 @@ export default function Discover() {
               onTouchEnd={onTouchEnd}
             >
               {/* Recipe image */}
-              {currentRecipe.image ? (
+              {currentRecipeImage ? (
                 <img
-                  src={currentRecipe.image}
+                  src={currentRecipeImage}
                   alt={currentRecipe.title}
                   className="w-full h-full object-cover pointer-events-none"
                   draggable={false}

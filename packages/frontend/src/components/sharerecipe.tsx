@@ -2,7 +2,11 @@ import { useState, useRef } from "react";
 import { UploadIcon, CloseIcon, ImageIcon, AddIcon } from "../assets";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_RECIPE_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const API_BASE =
+  (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
+  "http://localhost:3001";
 
 
 
@@ -28,7 +32,8 @@ export default function ShareRecipeForm() {
   const [ingredients, setIngredients] = useState([""]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,29 +54,48 @@ export default function ShareRecipeForm() {
     setIngredients(next);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const readImagePreview = (file: File) =>
+    new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     setSubmitError(null);
 
-    if (!file) return;
+    if (files.length === 0) return;
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setImagePreview(null);
+    if (imageFiles.length + files.length > MAX_RECIPE_IMAGES) {
+      e.target.value = "";
+      setSubmitError(`You can upload up to ${MAX_RECIPE_IMAGES} recipe images.`);
+      return;
+    }
+
+    const invalidType = files.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
+    if (invalidType) {
       e.target.value = "";
       setSubmitError("Only JPG, PNG, and WEBP images are allowed.");
       return;
     }
 
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      setImagePreview(null);
+    const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+    if (oversized) {
       e.target.value = "";
       setSubmitError("Image is too large. Maximum size is 5MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
+    const previews = await Promise.all(files.map(readImagePreview));
+    setImageFiles((current) => [...current, ...files]);
+    setImagePreviews((current) => [...current, ...previews]);
+    e.target.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles((current) => current.filter((_, i) => i !== index));
+    setImagePreviews((current) => current.filter((_, i) => i !== index));
   };
 
 
@@ -85,12 +109,10 @@ export default function ShareRecipeForm() {
     ingredients.forEach((i) => formData.append("ingredients", i));
     selectedTags.forEach((t) => formData.append("selectedTags", t));
 
-    if (fileInputRef.current?.files?.[0]) {
-      formData.append("image", fileInputRef.current.files[0]);
-    }
+    imageFiles.forEach((file) => formData.append("images", file));
 
     try {
-      const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/recipes", {
+      const response = await fetch(API_BASE + "/api/recipes", {
        method: "POST",
         body: formData,
         credentials: "include",
@@ -103,6 +125,12 @@ export default function ShareRecipeForm() {
 
       setSubmitted(true);
       setSubmitError(null);
+      setTitle("");
+      setDescription("");
+      setIngredients([""]);
+      setSelectedTags([]);
+      setImageFiles([]);
+      setImagePreviews([]);
     }   catch (err) {
       setSubmitted(false);
       setSubmitError(err instanceof Error ? err.message : "Failed to submit recipe");
@@ -151,20 +179,25 @@ export default function ShareRecipeForm() {
                   Recipe Image
                 </label>
                 <div className="flex gap-4">
-                  {imagePreview && (
-                    <div className="relative w-32 h-32 rounded-lg overflow-hidden shrink-0">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setImagePreview(null)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                      <CloseIcon className="w-3 h-3" />
-                      </button>
+                  {imagePreviews.length > 0 && (
+                    <div className="grid max-w-[18rem] grid-cols-2 gap-2 shrink-0">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={preview} className="relative h-32 w-32 overflow-hidden rounded-lg">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600"
+                            aria-label="Remove image"
+                          >
+                            <CloseIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                   <button
@@ -174,18 +207,19 @@ export default function ShareRecipeForm() {
                      dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:bg-gray-900"
                   >
                   <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-400" />
-                    {imagePreview ? "Change Image" : "Upload Image"}
+                    {imagePreviews.length > 0 ? "Add Images" : "Upload Images"}
                   </button>
                   <input
                     ref={fileInputRef}
                     type="file"
+                    multiple
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleImageUpload}
                     className="hidden"
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-300">
-                  Allowed: JPG, PNG, WEBP. Maximum size: 5MB.
+                  Allowed: JPG, PNG, WEBP. Maximum size: 5MB each. Up to {MAX_RECIPE_IMAGES} images.
                 </p>
               </div>
 

@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { CloseIcon, WarningIcon } from "../assets";
+import { RecipeImageGallery } from "../components/RecipeImageGallery";
 import { SortDropdown, type SortOption } from "../components/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
+import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -19,7 +21,7 @@ interface RecipeReview {
 }
 interface Recipe {
   id: string; title: string; description: string;
-  created_at: string; image: string | null; tags?: Tag[];
+  created_at: string; image: string | null; images?: string[]; tags?: Tag[];
   average_rating?: number | null;
   author_id?: string;
   author_name?: string;
@@ -36,6 +38,9 @@ const TAG_EMOJIS: Record<string, string> = {
 
 const API_BASE = (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "http://localhost:3001";
 const api = (path: string) => `${API_BASE}/api${path}`;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_RECIPE_IMAGES = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -66,6 +71,7 @@ function CardSkeleton() {
 
 function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () => void; index: number }) {
   const [imgError, setImgError] = useState(false);
+  const primaryImage = getPrimaryRecipeImage(recipe);
   return (
     <button
       onClick={onClick}
@@ -74,8 +80,8 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="aspect-4/3 overflow-hidden relative bg-gray-50 dark:bg-gray-700">
-        {recipe.image && !imgError ? (
-          <img src={recipe.image} alt={recipe.title}
+        {primaryImage && !imgError ? (
+          <img src={primaryImage} alt={recipe.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)} />
         ) : (
@@ -143,8 +149,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [editDescription, setEditDescription] = useState(recipe.description);
   const [editIngredients, setEditIngredients] = useState("");
   const [editSelectedTags, setEditSelectedTags] = useState<string[]>([]);
-  const [editImage, setEditImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [editImages, setEditImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savingRecipe, setSavingRecipe] = useState(false);
@@ -230,16 +236,41 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     setTimeout(onClose, 280);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setEditImage(file);
+  const readImagePreview = (file: File) =>
+    new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target?.result as string);
-      };
+      reader.onloadend = () => resolve(reader.result as string);
       reader.readAsDataURL(file);
+    });
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    if (files.length > MAX_RECIPE_IMAGES) {
+      e.target.value = "";
+      alert(`You can upload up to ${MAX_RECIPE_IMAGES} recipe images.`);
+      return;
     }
+
+    const invalidType = files.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
+    if (invalidType) {
+      e.target.value = "";
+      alert("Only JPG, PNG, and WEBP images are allowed.");
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+    if (oversized) {
+      e.target.value = "";
+      alert("Image is too large. Maximum size is 5MB.");
+      return;
+    }
+
+    const previews = await Promise.all(files.map(readImagePreview));
+    setEditImages(files);
+    setImagePreviews(previews);
+    e.target.value = "";
   };
 
   const handleSaveRecipe = async () => {
@@ -259,9 +290,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         .map(tag => tag.name);
       selectedTagNames.forEach(tag => formData.append("selectedTags", tag));
 
-      if (editImage) {
-        formData.append("image", editImage);
-      }
+      editImages.forEach((image) => formData.append("images", image));
 
       const response = await fetch(api(`/recipes/${recipe.id}`), {
         method: "PUT",
@@ -277,8 +306,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       const updatedRecipe = await response.json();
       onRecipeUpdate(updatedRecipe);
       setEditing(false);
-      setEditImage(null);
-      setImagePreview(null);
+      setEditImages([]);
+      setImagePreviews([]);
     } catch (err) {
       console.error("Error saving recipe:", err);
       alert(err instanceof Error ? err.message : "Failed to save recipe");
@@ -314,8 +343,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     setEditTitle(recipe.title);
     setEditDescription(recipe.description);
     setEditIngredients(ingredients.map(ing => ing.info).join("\n"));
-    setEditImage(null);
-    setImagePreview(null);
+    setEditImages([]);
+    setImagePreviews([]);
     if (recipe.tags) {
       setEditSelectedTags(recipe.tags.map(t => t.id));
     }
@@ -395,7 +424,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     }
   };
 
-  const currentImage = imagePreview || recipe.image;
+  const currentImages = imagePreviews.length > 0 ? imagePreviews : getRecipeImages(recipe);
+  const currentImage = currentImages[0] ?? null;
 
   return (
     <div
@@ -533,7 +563,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleImageSelect}
               className="hidden"
             />
@@ -603,7 +634,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
           </>
         ) : (
           <>
-            <div className="aspect-16/7 overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-gray-700">
+            <RecipeImageGallery images={getRecipeImages(recipe)} title={recipe.title} />
+            <div className="hidden">
               {recipe.image && !imgError ? (
                 <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
               ) : (
