@@ -3,6 +3,7 @@ import { supabase } from "./db/supabase";
 import express from "express";
 import { createRecipe, getAllRecipes, getRecipeIngredients, getAllTags, deleteRecipe, updateRecipe, getRecipeAuthorId, getRecipeReviews, addRecipeReview } from "./db/recipes";
 import { likeRecipe, unlikeRecipe, getUserLikedRecipes } from "./db/likes";
+import { getRecipeVoteSummary, voteRecipe } from "./db/upvotes";
 import { createUser, findUser, getUserId, getUserName, getAvatarUrl, setAvatarUrl, deleteUser, updatePassword, updateProfile } from "./db/user";
 import { getPreferences, upsertPreferences } from "./db/preferences";
 import jwt from 'jsonwebtoken';
@@ -59,6 +60,18 @@ function uploadRecipeImage(req: Request, res:Response, next: NextFunction) {
 
     return res.status(400).json({ error: "Invalid image upload." });
   })
+}
+
+function getOptionalUserEmail(req: Request): string | null {
+  const token = req.cookies?.token;
+  if (!token) return null;
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
+    return payload.email;
+  } catch {
+    return null;
+  }
 }
 
 // Route for creating a new recipe
@@ -172,6 +185,53 @@ recipeRouter.post("/recipes/:id/reviews", authenticateToken, async (req: AuthReq
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Failed to add review" });
+  }
+});
+
+recipeRouter.get("/recipes/:id/upvote", async (req: Request, res: Response) => {
+  try {
+    const summary = await getRecipeVoteSummary(
+      req.params.id,
+      getOptionalUserEmail(req),
+    );
+    return res.json(summary);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch vote status" });
+  }
+});
+
+recipeRouter.post("/recipes/:id/upvote", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const summary = await voteRecipe(req.user!.email, req.params.id, 1);
+    return res.status(201).json(summary);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to upvote recipe" });
+  }
+});
+
+recipeRouter.post("/recipes/:id/downvote", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const summary = await voteRecipe(req.user!.email, req.params.id, -1);
+    return res.status(201).json(summary);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to downvote recipe" });
+  }
+});
+
+recipeRouter.post("/recipes/:id/vote", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const voteValue = Number(req.body.vote_value);
+    if (![1, -1, 0].includes(voteValue)) {
+      return res.status(400).json({ error: "vote_value must be 1, -1, or 0" });
+    }
+    const summary = await voteRecipe(req.user!.email, req.params.id, voteValue);
+    return res.status(201).json(summary);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to submit vote" });
   }
 });
 

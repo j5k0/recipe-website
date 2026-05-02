@@ -10,6 +10,7 @@ export interface Recipe{
     author_id?: string;
     author_name?: string;
     author_avatar_url?: string | null;
+    upvote_count?: number;
 }
 
 export interface RecipeReview {

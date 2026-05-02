@@ -51,7 +51,12 @@ export async function getAllRecipes(): Promise<Recipe[]> {
                 SELECT ROUND(AVG(rating)::numeric, 1)
                 FROM recipe_reviews
                 WHERE recipe_id = r.id
-            ) AS average_rating
+            ) AS average_rating,
+            (
+                SELECT COALESCE(SUM(vote_value)::int, 0)
+                FROM recipe_votes
+                WHERE recipe_id = r.id
+            ) AS upvote_count
         FROM recipes r
         LEFT JOIN users u ON u.id = r.created_by
         LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
@@ -154,6 +159,7 @@ export async function deleteRecipe(recipeId: string): Promise<void> {
   await pool.query(`DELETE FROM ingredients WHERE recipe_id = $1`, [recipeId]);
   await pool.query(`DELETE FROM recipe_tags WHERE recipe_id = $1`, [recipeId]);
   await pool.query(`DELETE FROM recipe_reviews WHERE recipe_id = $1`, [recipeId]);
+  await pool.query(`DELETE FROM recipe_votes WHERE recipe_id = $1`, [recipeId]);
   await pool.query(`DELETE FROM recipes WHERE id = $1`, [recipeId]);
 }
 
@@ -252,7 +258,12 @@ export async function updateRecipe(recipeId: string, input: {
         SELECT ROUND(AVG(rating)::numeric, 1)
         FROM recipe_reviews
         WHERE recipe_id = r.id
-      ) AS average_rating
+      ) AS average_rating,
+      (
+        SELECT COALESCE(SUM(vote_value)::int, 0)
+        FROM recipe_votes
+        WHERE recipe_id = r.id
+      ) AS upvote_count
     FROM recipes r
     LEFT JOIN users u ON u.id = r.created_by
     LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
