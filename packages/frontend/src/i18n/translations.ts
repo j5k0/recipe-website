@@ -224,6 +224,8 @@ const en: TranslationsMap = {
   "sort.oldestFirst": "Oldest First",
   "sort.highestRated": "Highest Rated",
   "sort.lowestRated": "Lowest Rated",
+  "sort.highestVoted": "Highest Voted",
+  "sort.lowestVoted": "Lowest Voted",
 
   // Recipes Page
   "recipes.title": "Recipes",
@@ -527,6 +529,8 @@ const lt: TranslationsMap = {
   "sort.oldestFirst": "Seniausiai pirmiausia",
   "sort.highestRated": "Geriausiai įvertinti",
   "sort.lowestRated": "Prasčiausiai įvertinti",
+  "sort.highestVoted": "Daugiausia balsų",
+  "sort.lowestVoted": "Mažiausia balsų",
 
   // Recipes Page
   "recipes.title": "Receptai",

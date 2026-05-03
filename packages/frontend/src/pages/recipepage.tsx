@@ -8,6 +8,7 @@ import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
 import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
 import { useLanguage } from "../i18n/LanguageContext";
+import { requestLoginModal } from "../utils/loginEvents";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -74,6 +75,15 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
   const [imgError, setImgError] = useState(false);
   const { t, tTag } = useLanguage();
   const primaryImage = getPrimaryRecipeImage(recipe);
+  const voteScore = recipe.upvote_count ?? 0;
+  const VoteScoreIcon = voteScore < 0 ? ChevronDown : ChevronUp;
+  const voteScoreTone =
+    voteScore > 0
+      ? "border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+      : voteScore < 0
+        ? "border-rose-100 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+        : "border-gray-100 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-700/60 dark:text-gray-300";
+
   return (
     <button
       onClick={onClick}
@@ -111,22 +121,30 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         {recipe.description && (
           <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 dark:text-gray-300">{recipe.description}</p>
         )}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
+          <div className="mr-auto flex min-w-0 items-center gap-2">
             {recipe.author_avatar_url ? (
               <img src={recipe.author_avatar_url} alt={recipe.author_name || t("recipes.unknown")}
-                className="w-6 h-6 rounded-full object-cover" />
+                className="w-6 h-6 shrink-0 rounded-full object-cover" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
+              <div className="w-6 h-6 shrink-0 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
                 {recipe.author_name?.[0]?.toUpperCase() || "?"}
               </div>
             )}
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="truncate text-xs text-gray-500 dark:text-gray-400">
               {recipe.author_name || t("recipes.unknown")}
             </span>
           </div>
+          <div
+            className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 text-xs font-semibold ${voteScoreTone}`}
+            title={`${t("recipes.vote")}: ${voteScore}`}
+            aria-label={`${t("recipes.vote")}: ${voteScore}`}
+          >
+            <VoteScoreIcon className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="tabular-nums">{voteScore}</span>
+          </div>
           {recipe.average_rating !== undefined && recipe.average_rating !== null && recipe.average_rating > 0 && (
-            <div className="flex items-center gap-1 text-xs text-amber-500">
+            <div className="flex shrink-0 items-center gap-1 text-xs text-amber-500">
               <span className="text-sm">★</span>
               <span className="font-medium">{Number(recipe.average_rating).toFixed(1)}</span>
             </div>
@@ -537,6 +555,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   onClick={() => {
                     setShowLoginPrompt(false);
                     handleClose();
+                    window.setTimeout(requestLoginModal, 280);
                   }}
                   className="flex-1 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
@@ -893,6 +912,10 @@ export default function RecipesPage() {
         const ratingC = a.average_rating ?? -1;
         const ratingD = b.average_rating ?? -1;
         return ratingC - ratingD;
+      case "votes-desc":
+        return (b.upvote_count ?? 0) - (a.upvote_count ?? 0);
+      case "votes-asc":
+        return (a.upvote_count ?? 0) - (b.upvote_count ?? 0);
       default:
         return 0;
     }

@@ -13,6 +13,7 @@ import {
 import LoginModal from "./loginmodal.tsx";
 import { useAuth } from "../AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import { OPEN_LOGIN_MODAL_EVENT } from "../utils/loginEvents";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -79,6 +80,12 @@ export default function Navigation() {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [filterOpen]);
+
+  useEffect(() => {
+    const openLogin = () => setLoginOpen(true);
+    window.addEventListener(OPEN_LOGIN_MODAL_EVENT, openLogin);
+    return () => window.removeEventListener(OPEN_LOGIN_MODAL_EVENT, openLogin);
+  }, []);
 
   useEffect(() => {
     setSearch(searchParams.get("search") ?? "");
