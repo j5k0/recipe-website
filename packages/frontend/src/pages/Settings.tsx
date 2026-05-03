@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
+import { useLanguage } from "../i18n/LanguageContext";
 
 function Toggle({
   enabled,
@@ -25,6 +26,7 @@ function Toggle({
 
 export default function Settings() {
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [notifications, setNotifications] = useState(true);
   const [newRecipes, setNewRecipes] = useState(true);
@@ -82,10 +84,10 @@ export default function Settings() {
       <div className="max-w-2xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight dark:text-white">
-            Settings
+            {t("settings.title")}
           </h1>
           <p className="text-sm text-gray-400 mt-1 dark:text-gray-300">
-            Customize your experience
+            {t("settings.subtitle")}
           </p>
         </div>
 
@@ -93,32 +95,27 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Contact Preferences
+              {t("settings.contactPrefs")}
             </p>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-700">
             {[
               {
-                label: "Email notifications",
-                sub: "Receive important updates about your account and recipes via email",
+                label: t("settings.emailNotifications"),
+                sub: t("settings.emailNotificationsSub"),
                 value: emailNotifications,
                 toggle: () => setEmailNotifications((v) => !v),
               },
               {
-                label: "Marketing emails",
-                sub: "Get tips, featured recipes, and news from the team",
+                label: t("settings.marketingEmails"),
+                sub: t("settings.marketingEmailsSub"),
                 value: marketingEmails,
                 toggle: () => setMarketingEmails((v) => !v),
               },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between px-6 py-4"
-              >
+              <div key={item.label} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {item.label}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
                   <p className="text-xs text-gray-400 dark:text-gray-300">{item.sub}</p>
                 </div>
                 <Toggle enabled={item.value} onChange={item.toggle} disabled={loading || !user} />
@@ -131,38 +128,33 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Notifications
+              {t("settings.notifications")}
             </p>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-700">
             {[
               {
-                label: "Push notifications",
-                sub: "Receive alerts in your browser",
+                label: t("settings.pushNotifications"),
+                sub: t("settings.pushNotificationsSub"),
                 value: notifications,
                 toggle: () => setNotifications((v) => !v),
               },
               {
-                label: "New recipes",
-                sub: "When someone shares a new recipe",
+                label: t("settings.newRecipes"),
+                sub: t("settings.newRecipesSub"),
                 value: newRecipes,
                 toggle: () => setNewRecipes((v) => !v),
               },
               {
-                label: "Recipe review",
-                sub: "When someone posts a review on your recipe",
+                label: t("settings.recipeReview"),
+                sub: t("settings.recipeReviewSub"),
                 value: weeklyDigest,
                 toggle: () => setWeeklyDigest((v) => !v),
               },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between px-6 py-4"
-              >
+              <div key={item.label} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {item.label}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
                   <p className="text-xs text-gray-400 dark:text-gray-300">{item.sub}</p>
                 </div>
                 <Toggle enabled={item.value} onChange={item.toggle} />
@@ -175,22 +167,15 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Privacy
+              {t("settings.privacy")}
             </p>
           </div>
           <div className="flex items-center justify-between px-6 py-4">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                Public profile
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-300">
-                Allow others to see your shared recipes
-              </p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t("settings.publicProfile")}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-300">{t("settings.publicProfileSub")}</p>
             </div>
-            <Toggle
-              enabled={publicProfile}
-              onChange={() => setPublicProfile((v) => !v)}
-            />
+            <Toggle enabled={publicProfile} onChange={() => setPublicProfile((v) => !v)} />
           </div>
         </div>
 
@@ -198,15 +183,13 @@ export default function Settings() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-50 dark:border-gray-700">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-300">
-              Appearance
+              {t("settings.appearance")}
             </p>
           </div>
           <div className="flex items-center justify-between px-6 py-4">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Dark mode</p>
-              <p className="text-xs text-gray-400 dark:text-gray-300">
-                Switch the app to a darker theme
-              </p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t("settings.darkMode")}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-300">{t("settings.darkModeSub")}</p>
             </div>
             <Toggle enabled={darkMode} onChange={() => setDarkMode((v) => !v)} />
           </div>
@@ -219,12 +202,12 @@ export default function Settings() {
           className="w-full py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
         >
           {saveStatus === "saving"
-            ? "Saving…"
+            ? t("settings.saving")
             : saveStatus === "saved"
-            ? "Saved"
+            ? t("settings.saved")
             : saveStatus === "error"
-            ? "Failed to save"
-            : "Save changes"}
+            ? t("settings.saveFailed")
+            : t("settings.saveChanges")}
         </button>
       </div>
     </div>
