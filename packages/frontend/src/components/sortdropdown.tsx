@@ -1,19 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { SortIcon } from "../assets/sorticon";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export type SortOption = "date-desc" | "date-asc" | "reviews-desc" | "reviews-asc";
-
-interface SortOptionItem {
-  value: SortOption;
-  label: string;
-}
-
-const SORT_OPTIONS: SortOptionItem[] = [
-  { value: "date-desc", label: "Newest First" },
-  { value: "date-asc", label: "Oldest First" },
-  { value: "reviews-desc", label: "Highest Rated" },
-  { value: "reviews-asc", label: "Lowest Rated" },
-];
 
 interface SortDropdownProps {
   value: SortOption;
@@ -23,6 +12,14 @@ interface SortDropdownProps {
 export function SortDropdown({ value, onChange }: SortDropdownProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
+
+  const SORT_OPTIONS = [
+    { value: "date-desc" as SortOption, label: t("sort.newestFirst") },
+    { value: "date-asc" as SortOption, label: t("sort.oldestFirst") },
+    { value: "reviews-desc" as SortOption, label: t("sort.highestRated") },
+    { value: "reviews-asc" as SortOption, label: t("sort.lowestRated") },
+  ];
 
   const selectedOption = SORT_OPTIONS.find((o) => o.value === value);
 
