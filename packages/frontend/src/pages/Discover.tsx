@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { CloseIcon, HeartIcon, ExpandArrow } from "../assets";
 import { RecipeImageGallery } from "../components/RecipeImageGallery";
 import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") ??
@@ -37,6 +38,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
   const [imgError, setImgError] = useState(false);
   const [visible, setVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const { t, tTag, locale } = useLanguage();
 
   const handleClose = () => {
     setVisible(false);
@@ -44,13 +46,13 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
   };
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10);
+    const timer = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
     fetch(api(`/recipes/${recipe.id}/ingredients`))
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => [])
       .then((data: Ingredient[]) => { setIngredients(data); setLoadingIng(false); });
-    return () => { clearTimeout(t); document.body.style.overflow = ""; };
+    return () => { clearTimeout(timer); document.body.style.overflow = ""; };
   }, [recipe.id]);
 
   useEffect(() => {
@@ -98,17 +100,17 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             <div className="flex flex-wrap gap-2 mb-4">
               {recipe.tags.map((t) => (
                 <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-3 py-1 rounded-full dark:text-gray-300 dark:bg-gray-700">
-                  {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
+                  {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{tTag(t.name)}
                 </span>
               ))}
             </div>
           )}
           <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
-          
+
           {/* Author info in modal */}
           <div className="flex items-center gap-2 mb-4">
             {recipe.author_avatar_url ? (
-              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || t("recipes.unknown")}
                 className="w-6 h-6 rounded-full object-cover" />
             ) : (
               <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
@@ -116,13 +118,13 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
               </div>
             )}
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              {recipe.author_name || "Unknown"}
+              {recipe.author_name || t("recipes.unknown")}
             </p>
           </div>
-          
+
           {recipe.created_at && (
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-5 dark:text-gray-300">
-              {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              {new Date(recipe.created_at).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })}
             </p>
           )}
           <div className="h-px bg-gray-100 mb-5 dark:bg-gray-700" />
@@ -130,7 +132,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
             <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
           )}
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
-            <span>Ingredients</span>
+            <span>{t("recipes.ingredients")}</span>
             <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
           </h4>
           {loadingIng ? (
@@ -138,7 +140,7 @@ function RecipeDetailModal({ recipe, onClose }: { recipe: Recipe; onClose: () =>
               {[1, 2, 3].map((i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
             </div>
           ) : ingredients.length === 0 ? (
-            <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
+            <p className="text-gray-400 text-sm italic dark:text-gray-300">{t("recipes.noIngredients")}</p>
           ) : (
             <ul className="space-y-1.5">
               {ingredients.map((ing, i) => (
@@ -170,6 +172,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
   onSelect: (recipe: Recipe) => void;
 }) {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const { t, tTag } = useLanguage();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -190,9 +193,9 @@ function LikedPanel({ recipes, onClose, onSelect }: {
       >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Liked Recipes</h2>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("discover.likedPanelTitle")}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} this session
+              {t("discover.likedPanelCount", recipes.length)}
             </p>
           </div>
           <button
@@ -207,7 +210,7 @@ function LikedPanel({ recipes, onClose, onSelect }: {
           {recipes.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="text-4xl mb-3">🍃</div>
-              <p className="text-sm text-gray-400 dark:text-gray-500">No liked recipes yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t("discover.noLikedYet")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -237,12 +240,12 @@ function LikedPanel({ recipes, onClose, onSelect }: {
                       <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-snug">{recipe.title}</p>
                       {recipe.tags && recipe.tags.length > 0 && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate dark:text-gray-500">
-                          {recipe.tags.slice(0, 2).map((t) => `${TAG_EMOJIS[t.name] ?? ""} ${t.name}`).join(" · ")}
+                          {recipe.tags.slice(0, 2).map((t) => `${TAG_EMOJIS[t.name] ?? ""} ${tTag(t.name)}`).join(" · ")}
                         </p>
                       )}
                       {recipe.author_name && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate dark:text-gray-500">
-                          by {recipe.author_name}
+                          {t("discover.by")} {recipe.author_name}
                         </p>
                       )}
                     </div>
@@ -269,6 +272,7 @@ export default function Discover() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ user_name: string; email: string } | null>(null);
+  const { t, tTag } = useLanguage();
   const [likedRecipes, setLikedRecipes] = useState<Recipe[]>([]);
 
   // Panel & modal
@@ -357,7 +361,7 @@ export default function Discover() {
           prev.some((r) => r.id === recipe.id) ? prev : [...prev, recipe]
         );
         triggerLikeEffects();
-        showToast(`Liked "${recipe.title}"!`, "like");
+        showToast(t("discover.likedToast", recipe.title), "like");
         if (user) {
           fetch(`${API_BASE}/api/recipes/${recipe.id}/like`, {
             method: "POST",
@@ -365,7 +369,7 @@ export default function Discover() {
           }).catch(() => {});
         }
       } else {
-        showToast("Skipped", "skip");
+        showToast(t("discover.skipped"), "skip");
       }
 
       setTimeout(advanceCard, 720);
@@ -476,7 +480,7 @@ export default function Discover() {
       <div className="pt-16 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-80 h-120 bg-white dark:bg-gray-800 rounded-3xl animate-pulse border border-gray-100 dark:border-gray-700 shadow-xl" />
-          <p className="text-sm text-gray-400">Loading recipes…</p>
+          <p className="text-sm text-gray-400">{t("discover.loading")}</p>
         </div>
       </div>
     );
@@ -489,12 +493,10 @@ export default function Discover() {
         <div className="text-center px-6">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            You've seen them all!
+            {t("discover.seenAll")}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            {likedCount > 0
-              ? `You liked ${likedCount} recipe${likedCount !== 1 ? "s" : ""} this session`
-              : "No recipes liked this session"}
+            {t("discover.likedSession", likedCount)}
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {likedCount > 0 && (
@@ -503,19 +505,19 @@ export default function Discover() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
               >
                 <HeartIcon className="w-4 h-4" />
-                View Liked Recipes
+                {t("discover.viewLiked")}
               </button>
             )}
             <button
               onClick={() => { setCurrentIndex(0); setLikedRecipes([]); setRecipes(prev => [...prev].sort(() => Math.random() - 0.5)); }}
               className="px-5 py-2.5 bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white rounded-full text-sm font-medium hover:opacity-80 transition-opacity border border-gray-200 dark:border-gray-700"
             >
-              Start Over
+              {t("discover.startOver")}
             </button>
           </div>
           {!user && likedCount > 0 && (
             <p className="mt-6 text-sm text-amber-600 dark:text-amber-400">
-              Log in to save liked recipes permanently
+              {t("discover.loginToSave")}
             </p>
           )}
         </div>
@@ -551,9 +553,9 @@ export default function Discover() {
         {/* Header row */}
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Discover</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{t("discover.title")}</h1>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {recipes.length - currentIndex} recipe{recipes.length - currentIndex !== 1 ? "s" : ""} left
+              {t("discover.recipesLeft", recipes.length - currentIndex)}
             </p>
           </div>
           <button
@@ -566,7 +568,7 @@ export default function Discover() {
             disabled={likedCount === 0}
           >
             <HeartIcon className="w-4 h-4" />
-            {likedCount} liked
+            {t("discover.liked", likedCount)}
           </button>
         </div>
 
@@ -594,7 +596,7 @@ export default function Discover() {
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {nextRecipe.tags.slice(0, 3).map((t) => (
                       <span key={t.id} className="text-[10px] font-semibold uppercase tracking-wider bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full">
-                        {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                        {TAG_EMOJIS[t.name] ?? ""} {tTag(t.name)}
                       </span>
                     ))}
                   </div>
@@ -604,7 +606,7 @@ export default function Discover() {
                   <p className="text-sm text-white/80 line-clamp-2">{nextRecipe.description}</p>
                 )}
                 {nextRecipe.author_name && (
-                  <p className="text-xs text-white/70 mt-1">by {nextRecipe.author_name}</p>
+                  <p className="text-xs text-white/70 mt-1">{t("discover.by")} {nextRecipe.author_name}</p>
                 )}
               </div>
             </div>
@@ -679,7 +681,7 @@ export default function Discover() {
                   zIndex: 5,
                 }}
               >
-                LIKE
+                {t("discover.like")}
               </div>
 
               {/* NOPE stamp */}
@@ -691,19 +693,19 @@ export default function Discover() {
                   zIndex: 5,
                 }}
               >
-                NOPE
+                {t("discover.nope")}
               </div>
 
               {/* Content overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none" style={{ zIndex: 2 }}>
                 {currentRecipe.tags && currentRecipe.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {currentRecipe.tags.slice(0, 3).map((t) => (
+                    {currentRecipe.tags.slice(0, 3).map((tag) => (
                       <span
-                        key={t.id}
+                        key={tag.id}
                         className="text-[10px] font-semibold uppercase tracking-wider bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full"
                       >
-                        {TAG_EMOJIS[t.name] ?? ""} {t.name}
+                        {TAG_EMOJIS[tag.name] ?? ""} {tTag(tag.name)}
                       </span>
                     ))}
                   </div>
@@ -715,7 +717,7 @@ export default function Discover() {
                   <p className="text-sm text-white/80 line-clamp-2">{currentRecipe.description}</p>
                 )}
                 {currentRecipe.author_name && (
-                  <p className="text-xs text-white/70 mt-1">by {currentRecipe.author_name}</p>
+                  <p className="text-xs text-white/70 mt-1">{t("discover.by")} {currentRecipe.author_name}</p>
                 )}
               </div>
             </div>
@@ -751,13 +753,13 @@ export default function Discover() {
 
         {/* Hint */}
         <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-          Swipe right to like · Swipe left to skip · Use ← → arrow keys
+          {t("discover.swipeHint")}
         </p>
 
         {/* Login nudge */}
         {!user && likedCount > 0 && (
           <div className="w-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-sm text-amber-700 dark:text-amber-300 text-center">
-            Log in to save your liked recipes permanently!
+            {t("discover.loginNudge")}
           </div>
         )}
       </div>

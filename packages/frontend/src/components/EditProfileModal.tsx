@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { CloseIcon } from "../assets";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -18,6 +19,7 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,16 +30,16 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
 
   const handleSubmit = async () => {
     setError(null);
-    if (!name.trim()) { setError("Name is required"); return; }
-    if (!email.trim()) { setError("Email is required"); return; }
-    if (!email.includes("@")) { setError("Invalid email format"); return; }
+    if (!name.trim()) { setError(t("editProfile.nameRequired")); return; }
+    if (!email.trim()) { setError(t("editProfile.emailRequired")); return; }
+    if (!email.includes("@")) { setError(t("editProfile.invalidEmail")); return; }
     setLoading(true);
     try {
       if (avatarFile) {
         const formData = new FormData();
         formData.append("image", avatarFile);
         const avatarRes = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/user/avatar", { method: "POST", credentials: "include", body: formData });
-        if (!avatarRes.ok) throw new Error("Failed to upload avatar");
+        if (!avatarRes.ok) throw new Error(t("editProfile.failedUpload"));
       }
       const res = await fetch(import.meta.env.VITE_BACKEND_URL + "/auth/user/profile", {
         method: "PUT",
@@ -47,8 +49,8 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
       });
       if (res.ok) { setSuccess(true); onUpdated(); setTimeout(onClose, 2000); return; }
       const data = await res.json();
-      setError(data.error || "Failed to update profile");
-    } catch { setError("Something went wrong. Try again."); }
+      setError(data.error || t("editProfile.failedUpdate"));
+    } catch { setError(t("editProfile.somethingWrong")); }
     finally { setLoading(false); }
   };
 
@@ -65,8 +67,8 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
             <span className="text-xl">✏️</span>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Edit profile</h2>
-            <p className="text-xs text-gray-400 dark:text-gray-300">Update your name, email and photo</p>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("editProfile.title")}</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-300">{t("editProfile.subtitle")}</p>
           </div>
         </div>
         <div className="flex justify-center mb-4">
@@ -89,7 +91,7 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
         </div>
         <input
           type="text"
-          placeholder="Username"
+          placeholder={t("editProfile.usernamePlaceholder")}
           value={name}
           onChange={(e) => { setName(e.target.value); setError(null); }}
           className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 mb-3"
@@ -97,7 +99,7 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
         />
         <input
           type="email"
-          placeholder="Email"
+          placeholder={t("editProfile.emailPlaceholder")}
           value={email}
           onChange={(e) => { setEmail(e.target.value); setError(null); }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -111,7 +113,7 @@ export default function EditProfileModal({ onClose, userName, userEmail, userAva
             success ? "bg-lime-700 text-white" : "bg-gray-900 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900"
           } disabled:opacity-60`}
         >
-          {success ? "Saved!" : loading ? "Saving…" : "Save"}
+          {success ? t("editProfile.saved") : loading ? t("editProfile.saving") : t("editProfile.save")}
         </button>
       </div>
     </div>

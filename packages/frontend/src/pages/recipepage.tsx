@@ -7,6 +7,7 @@ import { SortDropdown, type SortOption } from "../components/sortdropdown";
 import ShareRecipeForm from "../components/sharerecipe";
 import { useAuth } from "../AuthContext";
 import { getPrimaryRecipeImage, getRecipeImages } from "../utils/recipeImages";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface Tag { id: string; name: string; }
 interface Ingredient { id: string; recipe_id: string; info: string; }
@@ -42,14 +43,14 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_RECIPE_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-function timeAgo(dateStr: string) {
+function timeAgo(dateStr: string, t: (key: string, ...args: any[]) => string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days}d ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
+  if (days === 0) return t("time.today");
+  if (days === 1) return t("time.yesterday");
+  if (days < 30) return t("time.daysAgo", days);
+  if (days < 365) return t("time.monthsAgo", Math.floor(days / 30));
+  return t("time.yearsAgo", Math.floor(days / 365));
 }
 
 function CardSkeleton() {
@@ -71,6 +72,7 @@ function CardSkeleton() {
 
 function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () => void; index: number }) {
   const [imgError, setImgError] = useState(false);
+  const { t, tTag } = useLanguage();
   const primaryImage = getPrimaryRecipeImage(recipe);
   return (
     <button
@@ -89,16 +91,16 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         )}
         {recipe.created_at && (
           <span className="absolute top-3 right-3 text-xs bg-white/90 text-gray-500 px-2 py-0.5 rounded-full shadow-sm dark:bg-gray-900/90 dark:text-gray-300">
-            {timeAgo(recipe.created_at)}
+            {timeAgo(recipe.created_at, t)}
           </span>
         )}
       </div>
       <div className="p-5">
         {recipe.tags && recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {recipe.tags.slice(0, 3).map((t) => (
-              <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full dark:text-gray-300 dark:bg-gray-700">
-                {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
+            {recipe.tags.slice(0, 3).map((tag) => (
+              <span key={tag.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full dark:text-gray-300 dark:bg-gray-700">
+                {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{tTag(tag.name)}
               </span>
             ))}
           </div>
@@ -112,7 +114,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {recipe.author_avatar_url ? (
-              <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+              <img src={recipe.author_avatar_url} alt={recipe.author_name || t("recipes.unknown")}
                 className="w-6 h-6 rounded-full object-cover" />
             ) : (
               <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-500">
@@ -120,7 +122,7 @@ function RecipeCard({ recipe, onClick, index }: { recipe: Recipe; onClick: () =>
               </div>
             )}
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {recipe.author_name || "Unknown"}
+              {recipe.author_name || t("recipes.unknown")}
             </span>
           </div>
           {recipe.average_rating !== undefined && recipe.average_rating !== null && recipe.average_rating > 0 && (
@@ -165,13 +167,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
   const [loadingVote, setLoadingVote] = useState(true);
   const [submittingVote, setSubmittingVote] = useState(false);
   const { user } = useAuth();
+  const { t, tTag, locale } = useLanguage();
   const hasUpvoted = userVote === 1;
   const hasDownvoted = userVote === -1;
 
   const isAuthor = user && recipe.author_id && user.unique_id === recipe.author_id;
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10);
+    const timer = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
 
     fetch(api(`/recipes/${recipe.id}/ingredients`))
@@ -197,11 +200,11 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       .then((data) => {
         setAvailableTags(data);
         if (recipe.tags) {
-          setEditSelectedTags(recipe.tags.map(t => t.id));
+          setEditSelectedTags(recipe.tags.map(tag => tag.id));
         }
       });
 
-    return () => { clearTimeout(t); document.body.style.overflow = ""; };
+    return () => { clearTimeout(timer); document.body.style.overflow = ""; };
   }, [recipe.id]);
 
   useEffect(() => {
@@ -229,7 +232,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClose = () => {
     setVisible(false);
@@ -299,9 +302,8 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        throw new Error(data?.error ?? "Failed to update recipe");
+        throw new Error(data?.error ?? t("recipes.failedSave"));
       }
-
 
       const updatedRecipe = await response.json();
       onRecipeUpdate(updatedRecipe);
@@ -310,7 +312,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       setImagePreviews([]);
     } catch (err) {
       console.error("Error saving recipe:", err);
-      alert(err instanceof Error ? err.message : "Failed to save recipe");
+      alert(err instanceof Error ? err.message : t("recipes.failedSave"));
     } finally {
       setSavingRecipe(false);
     }
@@ -325,14 +327,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete recipe");
+      if (!response.ok) throw new Error(t("recipes.failedDelete"));
 
       setShowDeleteConfirm(false);
       onRecipeDelete(recipe.id);
       handleClose();
     } catch (err) {
       console.error("Error deleting recipe:", err);
-      alert("Failed to delete recipe");
+      alert(t("recipes.failedDelete"));
     } finally {
       setDeletingRecipe(false);
     }
@@ -346,19 +348,19 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
     setEditImages([]);
     setImagePreviews([]);
     if (recipe.tags) {
-      setEditSelectedTags(recipe.tags.map(t => t.id));
+      setEditSelectedTags(recipe.tags.map(tag => tag.id));
     }
   };
 
   const handleSubmitReview = async () => {
     if (!user) {
-      alert("Please log in to add a review.");
+      alert(t("recipes.pleaseLoginReview"));
       return;
     }
 
     const trimmedComment = newReviewComment.trim();
     if (!trimmedComment) {
-      alert("Review comment cannot be empty.");
+      alert(t("recipes.reviewEmpty"));
       return;
     }
 
@@ -376,7 +378,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to add review");
+      if (!response.ok) throw new Error(t("recipes.failedReview"));
 
       const createdReview: RecipeReview = await response.json();
       setReviews((prev) => [createdReview, ...prev]);
@@ -384,7 +386,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       setNewReviewRating(5);
     } catch (err) {
       console.error("Error adding review:", err);
-      alert("Failed to add review");
+      alert(t("recipes.failedReview"));
     } finally {
       setSubmittingReview(false);
     }
@@ -410,7 +412,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
         body: JSON.stringify({ vote_value: voteValue }),
       });
 
-      if (!response.ok) throw new Error("Failed to submit vote");
+      if (!response.ok) throw new Error(t("recipes.failedVote"));
 
       const data: UpvoteSummary = await response.json();
       setUpvoteCount(data.vote_count);
@@ -418,7 +420,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
       onRecipeUpdate({ ...recipe, upvote_count: data.vote_count });
     } catch (err) {
       console.error("Error submitting vote:", err);
-      alert("Failed to submit vote");
+      alert(t("recipes.failedVote"));
     } finally {
       setSubmittingVote(false);
     }
@@ -452,14 +454,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
               editing ? null : (
             <>
               <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                Edit
+                {t("recipes.edit")}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={deletingRecipe}
                 className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-red-500 dark:hover:bg-red-600"
               >
-                {deletingRecipe ? "Deleting..." : "Delete"}
+                {deletingRecipe ? t("recipes.deleting") : t("recipes.delete")}
               </button>
             </>
           ) : null}
@@ -476,13 +478,13 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   <WarningIcon className="w-5 h-5 text-red-500 dark:text-red-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Delete recipe</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-300">This action cannot be undone</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("recipes.deleteTitle")}</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-300">{t("recipes.deleteCannotUndo")}</p>
                 </div>
               </div>
 
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
-                <span className="font-medium text-gray-900 dark:text-white">{recipe.title}</span> will be permanently removed from your recipes.
+                {t("recipes.deleteWillBeRemoved", recipe.title)}
               </p>
 
               <div className="flex gap-3">
@@ -491,14 +493,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   disabled={deletingRecipe}
                   className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t("recipes.cancel")}
                 </button>
                 <button
                   onClick={handleDeleteRecipe}
                   disabled={deletingRecipe}
                   className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
                 >
-                  {deletingRecipe ? "Deleting..." : "Confirm delete"}
+                  {deletingRecipe ? t("recipes.deleting") : t("recipes.confirmDelete")}
                 </button>
               </div>
             </div>
@@ -515,13 +517,13 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Log in required</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-300">Sign in to vote on recipes</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("recipes.loginRequired")}</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-300">{t("recipes.signInToVote")}</p>
                 </div>
               </div>
 
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
-                Please log in to your account to vote on this recipe.
+                {t("recipes.pleaseLogin")}
               </p>
 
               <div className="flex gap-3">
@@ -529,7 +531,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   onClick={() => setShowLoginPrompt(false)}
                   className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t("recipes.cancel")}
                 </button>
                 <button
                   onClick={() => {
@@ -538,7 +540,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   }}
                   className="flex-1 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
-                  Go to login
+                  {t("recipes.goToLogin")}
                 </button>
               </div>
             </div>
@@ -557,7 +559,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200 dark:text-gray-500">🍽</div>
               )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm font-medium">Click to change image</span>
+                <span className="text-white text-sm font-medium">{t("recipes.clickToChange")}</span>
               </div>
             </button>
             <input
@@ -575,24 +577,24 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 className="w-full text-2xl font-semibold text-gray-900 mb-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="Recipe title"
+                placeholder={t("recipes.recipeTitlePlaceholder")}
               />
 
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 className="w-full text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                placeholder="Recipe description"
+                placeholder={t("recipes.recipeDescPlaceholder")}
                 rows={3}
               />
 
-              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">Tags</h4>
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">{t("recipes.tags")}</h4>
               <div className="flex flex-wrap gap-2 mb-6">
                 {availableTags.map((tag) => (
                   <button
                     key={tag.id}
                     onClick={() => setEditSelectedTags(prev =>
-                      prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id]
+                      prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
                     )}
                     className={`text-[11px] font-medium uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                       editSelectedTags.includes(tag.id)
@@ -600,17 +602,17 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
                     }`}
                   >
-                    {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{tag.name}
+                    {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{tTag(tag.name)}
                   </button>
                 ))}
               </div>
 
-              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">Ingredients</h4>
+              <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 dark:text-gray-300">{t("recipes.ingredients")}</h4>
               <textarea
                 value={editIngredients}
                 onChange={(e) => setEditIngredients(e.target.value)}
                 className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-6 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                placeholder="Each ingredient on a new line"
+                placeholder={t("recipes.ingredientPerLine")}
                 rows={6}
               />
 
@@ -620,14 +622,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   disabled={savingRecipe}
                   className="flex-1 bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
-                  {savingRecipe ? "Saving..." : "Save Changes"}
+                  {savingRecipe ? t("recipes.saving") : t("recipes.saveChanges")}
                 </button>
                 <button
                   onClick={handleCancelEdit}
                   disabled={savingRecipe}
                   className="flex-1 bg-gray-100 text-gray-900 font-medium py-2 rounded-lg hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
-                  Cancel
+                  {t("recipes.cancel")}
                 </button>
               </div>
             </div>
@@ -646,19 +648,19 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
             <div className="p-8">
               {recipe.tags && recipe.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {recipe.tags.map((t) => (
-                    <span key={t.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-3 py-1 rounded-full dark:text-gray-300 dark:bg-gray-700">
-                      {TAG_EMOJIS[t.name] ? `${TAG_EMOJIS[t.name]} ` : ""}{t.name}
+                  {recipe.tags.map((tag) => (
+                    <span key={tag.id} className="text-[11px] font-medium uppercase tracking-wider text-gray-500 bg-gray-100 px-3 py-1 rounded-full dark:text-gray-300 dark:bg-gray-700">
+                      {TAG_EMOJIS[tag.name] ? `${TAG_EMOJIS[tag.name]} ` : ""}{tTag(tag.name)}
                     </span>
                   ))}
                 </div>
               )}
               <h2 className="text-2xl font-semibold text-gray-900 leading-tight mb-1 dark:text-white">{recipe.title}</h2>
-              
+
               {/* Author info */}
               <div className="flex items-center gap-2 mb-4">
                 {recipe.author_avatar_url ? (
-                  <img src={recipe.author_avatar_url} alt={recipe.author_name || "Author"}
+                  <img src={recipe.author_avatar_url} alt={recipe.author_name || t("recipes.unknown")}
                     className="w-8 h-8 rounded-full object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-sm text-gray-500">
@@ -667,20 +669,20 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 )}
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {recipe.author_name || "Unknown"}
+                    {recipe.author_name || t("recipes.unknown")}
                   </p>
                   {recipe.created_at && (
                     <p className="text-xs text-gray-400 dark:text-gray-300">
-                      {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                      {new Date(recipe.created_at).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })}
                     </p>
                   )}
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 {recipe.created_at && (
                   <p className="text-xs text-gray-400 uppercase tracking-wider dark:text-gray-300">
-                    {new Date(recipe.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                    {new Date(recipe.created_at).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })}
                   </p>
                 )}
                 <div className="inline-flex items-center gap-2">
@@ -701,7 +703,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
 
                   <div className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                     <span className="tabular-nums">{upvoteCount}</span>
-                    <span>{loadingVote ? "Loading votes..." : hasUpvoted ? "Upvoted" : hasDownvoted ? "Downvoted" : "Vote"}</span>
+                    <span>{loadingVote ? t("recipes.loadingVotes") : hasUpvoted ? t("recipes.upvoted") : hasDownvoted ? t("recipes.downvoted") : t("recipes.vote")}</span>
                   </div>
 
                   <button
@@ -725,7 +727,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                 <p className="text-gray-500 leading-relaxed mb-6 text-sm dark:text-gray-200">{recipe.description}</p>
               )}
               <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-3 dark:text-gray-300">
-                <span>Ingredients</span>
+                <span>{t("recipes.ingredients")}</span>
                 <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
               </h4>
               {loadingIng ? (
@@ -733,7 +735,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   {[1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
                 </div>
               ) : ingredients.length === 0 ? (
-                <p className="text-gray-400 text-sm italic dark:text-gray-300">No ingredients listed.</p>
+                <p className="text-gray-400 text-sm italic dark:text-gray-300">{t("recipes.noIngredients")}</p>
               ) : (
                 <ul className="space-y-1.5">
                   {ingredients.map((ing, i) => (
@@ -754,14 +756,14 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
               )}
 
               <h4 className="text-xs uppercase tracking-widest text-gray-400 mt-8 mb-3 flex items-center gap-3 dark:text-gray-300">
-                <span>Reviews</span>
+                <span>{t("recipes.reviews")}</span>
                 <span className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
               </h4>
 
               {user ? (
                 <div className="mb-5 p-4 rounded-xl bg-gray-50 border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
                   <div className="flex items-center gap-3 mb-3">
-                    <label className="text-sm text-gray-600 dark:text-gray-200">Rating:</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-200">{t("recipes.rating")}</label>
                     <select
                       value={newReviewRating}
                       onChange={(e) => setNewReviewRating(Number(e.target.value))}
@@ -769,7 +771,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                     >
                       {[5, 4, 3, 2, 1].map((rating) => (
                         <option key={rating} value={rating}>
-                          {rating} star{rating > 1 ? "s" : ""}
+                          {t("recipes.stars", rating)}
                         </option>
                       ))}
                     </select>
@@ -778,7 +780,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                     value={newReviewComment}
                     onChange={(e) => setNewReviewComment(e.target.value)}
                     rows={3}
-                    placeholder="Share your thoughts about this recipe..."
+                    placeholder={t("recipes.reviewPlaceholder")}
                     className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 mb-3 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
                   />
                   <button
@@ -786,12 +788,12 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                     disabled={submittingReview}
                     className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-600"
                   >
-                    {submittingReview ? "Submitting..." : "Add Review"}
+                    {submittingReview ? t("recipes.submittingReview") : t("recipes.addReview")}
                   </button>
                 </div>
               ) : (
                 <p className="text-gray-400 text-sm italic mb-5 dark:text-gray-300">
-                  Log in to write a review.
+                  {t("recipes.loginToReview")}
                 </p>
               )}
 
@@ -800,7 +802,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                   {[1, 2].map((i) => <div key={i} className="h-20 bg-gray-50 rounded-lg animate-pulse dark:bg-gray-700" />)}
                 </div>
               ) : reviews.length === 0 ? (
-                <p className="text-gray-400 text-sm italic dark:text-gray-300">No reviews yet.</p>
+                <p className="text-gray-400 text-sm italic dark:text-gray-300">{t("recipes.noReviews")}</p>
               ) : (
                 <div className="space-y-3">
                   {reviews.map((review) => (
@@ -808,7 +810,7 @@ function RecipeModal({ recipe, onClose, onRecipeUpdate, onRecipeDelete }: { reci
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <p className="text-sm font-medium text-gray-800 dark:text-white">{review.reviewer_name}</p>
                         <p className="text-xs text-gray-400 dark:text-gray-300">
-                          {new Date(review.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                          {new Date(review.created_at).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" })}
                         </p>
                       </div>
                       <p className="text-sm text-amber-500 mb-2">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
@@ -832,6 +834,7 @@ export default function RecipesPage() {
   const [selected, setSelected] = useState<Recipe | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLanguage();
 
   const search = searchParams.get("search") ?? "";
   const activeTags = searchParams.getAll("tag");
@@ -872,7 +875,7 @@ export default function RecipesPage() {
   const filtered = recipes.filter((r) => {
     const q = search.toLowerCase();
     const matchSearch = !q || r.title?.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q);
-    const matchTag = activeTags.length === 0 || activeTags.every((tagId) => r.tags?.some((t) => t.id === tagId));
+    const matchTag = activeTags.length === 0 || activeTags.every((tagId) => r.tags?.some((tag) => tag.id === tagId));
     return matchSearch && matchTag;
   });
 
@@ -901,7 +904,7 @@ export default function RecipesPage() {
         <div className="max-w-7xl mx-auto px-6 pt-6">
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl flex items-center gap-2 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300">
             <WarningIcon className="w-4 h-4 shrink-0" />
-            Cannot connect to backend — {error}
+            {t("recipes.cannotConnect")} — {error}
           </div>
         </div>
       )}
@@ -909,7 +912,7 @@ export default function RecipesPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {loading ? "Recipes" : `${sorted.length} Recipe${sorted.length !== 1 ? "s" : ""}`}
+            {loading ? t("recipes.title") : t("recipes.count", sorted.length)}
           </h2>
           {!loading && sorted.length > 0 && (
             <SortDropdown value={sortBy} onChange={setSortBy} />
@@ -923,9 +926,9 @@ export default function RecipesPage() {
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-2xl mb-4 dark:bg-gray-800">🍃</div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1 dark:text-white">No recipes found</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-1 dark:text-white">{t("recipes.noFound")}</h3>
             <p className="text-sm text-gray-400 dark:text-gray-300">
-              {search || activeTags.length > 0 ? "Try changing your search or filters" : "No recipes have been added yet"}
+              {search || activeTags.length > 0 ? t("recipes.tryChanging") : t("recipes.noneAdded")}
             </p>
           </div>
         ) : (

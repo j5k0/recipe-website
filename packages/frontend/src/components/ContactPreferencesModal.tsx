@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CloseIcon } from "../assets";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ContactPreferencesModalProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ export default function ContactPreferencesModal({ onClose }: ContactPreferencesM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
   const fetchPrefs = async () => {
     try {
@@ -29,8 +31,8 @@ export default function ContactPreferencesModal({ onClose }: ContactPreferencesM
         body: JSON.stringify({ email_notifications: emailNotifications, marketing_emails: marketingEmails }),
       });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 2000); return; }
-      const data = await res.json(); setError(data.error || "Failed to save preferences");
-    } catch { setError("Something went wrong. Try again."); }
+      const data = await res.json(); setError(data.error || t("contactPrefs.failed"));
+    } catch { setError(t("contactPrefs.somethingWrong")); }
     finally { setLoading(false); }
   };
 
@@ -49,19 +51,19 @@ export default function ContactPreferencesModal({ onClose }: ContactPreferencesM
             <span className="text-xl">📧</span>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Contact preferences</h2>
-            <p className="text-xs text-gray-400 dark:text-gray-300">Manage your information and notifications</p>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("contactPrefs.title")}</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-300">{t("contactPrefs.subtitle")}</p>
           </div>
         </div>
         <div className="space-y-4 mb-4">
           <label className="flex items-center justify-between p-3 border border-gray-100 rounded-xl dark:border-gray-700">
-            <div><p className="text-sm font-medium text-gray-900 dark:text-white">Email notifications</p><p className="text-xs text-gray-400 dark:text-gray-300">Receive emails about your account activity</p></div>
+            <div><p className="text-sm font-medium text-gray-900 dark:text-white">{t("contactPrefs.emailNotifications")}</p><p className="text-xs text-gray-400 dark:text-gray-300">{t("contactPrefs.emailNotificationsSub")}</p></div>
             <button type="button" onClick={handleToggle(setEmailNotifications)} className={`relative w-11 h-6 rounded-full transition-colors ${emailNotifications ? "bg-gray-900 dark:bg-white" : "bg-gray-300 dark:bg-gray-600"}`}>
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${emailNotifications ? "translate-x-5" : ""}`} />
             </button>
           </label>
           <label className="flex items-center justify-between p-3 border border-gray-100 rounded-xl dark:border-gray-700">
-            <div><p className="text-sm font-medium text-gray-900 dark:text-white">Marketing emails</p><p className="text-xs text-gray-400 dark:text-gray-300">Receive updates and promotional content</p></div>
+            <div><p className="text-sm font-medium text-gray-900 dark:text-white">{t("contactPrefs.marketingEmails")}</p><p className="text-xs text-gray-400 dark:text-gray-300">{t("contactPrefs.marketingEmailsSub")}</p></div>
             <button type="button" onClick={handleToggle(setMarketingEmails)} className={`relative w-11 h-6 rounded-full transition-colors ${marketingEmails ? "bg-gray-900 dark:bg-white" : "bg-gray-300 dark:bg-gray-600"}`}>
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${marketingEmails ? "translate-x-5" : ""}`} />
             </button>
@@ -75,7 +77,7 @@ export default function ContactPreferencesModal({ onClose }: ContactPreferencesM
             success ? "bg-lime-700 text-white" : "bg-gray-900 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900"
           } disabled:opacity-60`}
         >
-          {success ? "Saved!" : loading ? "Saving…" : "Save"}
+          {success ? t("contactPrefs.saved") : loading ? t("contactPrefs.saving") : t("contactPrefs.save")}
         </button>
       </div>
     </div>

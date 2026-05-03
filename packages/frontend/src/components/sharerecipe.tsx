@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { UploadIcon, CloseIcon, ImageIcon, AddIcon } from "../assets";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_RECIPE_IMAGES = 5;
@@ -26,6 +27,7 @@ const TAGS = [
 ];
 
 export default function ShareRecipeForm() {
+  const { t, tTag } = useLanguage();
   const [title, setTitle] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [description, setDescription] = useState("");
@@ -69,21 +71,21 @@ export default function ShareRecipeForm() {
 
     if (imageFiles.length + files.length > MAX_RECIPE_IMAGES) {
       e.target.value = "";
-      setSubmitError(`You can upload up to ${MAX_RECIPE_IMAGES} recipe images.`);
+      setSubmitError(t("share.tooManyImages", MAX_RECIPE_IMAGES));
       return;
     }
 
     const invalidType = files.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
     if (invalidType) {
       e.target.value = "";
-      setSubmitError("Only JPG, PNG, and WEBP images are allowed.");
+      setSubmitError(t("share.invalidType"));
       return;
     }
 
     const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
     if (oversized) {
       e.target.value = "";
-      setSubmitError("Image is too large. Maximum size is 5MB.");
+      setSubmitError(t("share.imageTooLarge"));
       return;
     }
 
@@ -142,16 +144,16 @@ export default function ShareRecipeForm() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-semibold text-gray-900 mb-2 dark:text-white">
-            Share Your Recipe
+            {t("share.title")}
           </h2>
           <p className="text-gray-500 dark:text-gray-300 dark:text-gray-300">
-            Have a delicious recipe? Share it with our community!
+            {t("share.subtitle")}
           </p>
         </div>
 
         {submitted && (
           <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm text-center dark:bg-green-950/40 dark:border-green-900 dark:text-green-300">
-            🎉 Recipe submitted successfully!
+            {t("share.submitted")}
           </div>
         )}
 
@@ -169,14 +171,14 @@ export default function ShareRecipeForm() {
                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               <UploadIcon className="w-5 h-5" />
-              Start Sharing
+              {t("share.startSharing")}
             </button>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                  Recipe Image
+                  {t("share.recipeImage")}
                 </label>
                 <div className="flex gap-4">
                   {imagePreviews.length > 0 && (
@@ -207,7 +209,7 @@ export default function ShareRecipeForm() {
                      dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:bg-gray-900"
                   >
                   <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-400" />
-                    {imagePreviews.length > 0 ? "Add Images" : "Upload Images"}
+                    {imagePreviews.length > 0 ? t("share.addImages") : t("share.uploadImages")}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -219,7 +221,7 @@ export default function ShareRecipeForm() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-300">
-                  Allowed: JPG, PNG, WEBP. Maximum size: 5MB each. Up to {MAX_RECIPE_IMAGES} images.
+                  {t("share.imageHint", MAX_RECIPE_IMAGES)}
                 </p>
               </div>
 
@@ -229,7 +231,7 @@ export default function ShareRecipeForm() {
                   htmlFor="recipe-title"
                   className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 >
-                  Recipe Title
+                  {t("share.recipeTitle")}
                 </label>
                 <input
                   id="recipe-title"
@@ -238,7 +240,7 @@ export default function ShareRecipeForm() {
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 bg-white text-gray-900 placeholder:text-gray-400 transition-all
                    dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
-                  placeholder="My Amazing Recipe"
+                  placeholder={t("share.titlePlaceholder")}
                   required
                 />
               </div>
@@ -249,7 +251,7 @@ export default function ShareRecipeForm() {
                   htmlFor="recipe-description"
                   className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 >
-                  Description
+                  {t("share.description")}
                 </label>
                 <textarea
                   id="recipe-description"
@@ -258,7 +260,7 @@ export default function ShareRecipeForm() {
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 resize-none bg-white text-gray-900 placeholder:text-gray-400 transition-all
                    dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
-                  placeholder="Tell us about your recipe..."
+                  placeholder={t("share.descPlaceholder")}
                   required
                 />
               </div>
@@ -266,7 +268,7 @@ export default function ShareRecipeForm() {
               {/* Ingredients */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                  Ingredients
+                  {t("share.ingredients")}
                 </label>
                 <div className="space-y-2">
                   {ingredients.map((ingredient, index) => (
@@ -279,7 +281,7 @@ export default function ShareRecipeForm() {
                         }
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 text-gray-900 placeholder:text-gray-400 transition-all
                          dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
-                        placeholder="e.g., 2 cups flour"
+                        placeholder={t("share.ingredientPlaceholder")}
                       />
                       {ingredients.length > 1 && (
                         <button
@@ -299,17 +301,17 @@ export default function ShareRecipeForm() {
                   className="mt-2 text-sm text-gray-900 hover:text-gray-600 flex items-center gap-1 transition-colors dark:text-white dark:hover:text-gray-300"
                 >
                 <AddIcon className="w-4 h-4" />
-                  Add Ingredient
+                  {t("share.addIngredient")}
                 </button>
               </div>
 
               {/* Tags */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
-                  Tags
+                  {t("share.tags")}
                   {selectedTags.length > 0 && (
                     <span className="ml-2 text-xs text-gray-400 font-normal dark:text-gray-400">
-                      {selectedTags.length} selected
+                      {selectedTags.length} {t("share.selected")}
                     </span>
                   )}
                 </label>
@@ -328,7 +330,7 @@ export default function ShareRecipeForm() {
                         }`}
                       >
                         <span>{emoji}</span>
-                        <span>{label}</span>
+                        <span>{tTag(label)}</span>
                       </button>
                     );
                   })}
@@ -341,7 +343,7 @@ export default function ShareRecipeForm() {
                   type="submit"
                   className="flex-1 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                 >
-                  Submit Recipe
+                  {t("share.submitRecipe")}
                 </button>
                 <button
                   type="button"
@@ -351,7 +353,7 @@ export default function ShareRecipeForm() {
                   className="px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700 dark:text-gray-300
                    dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t("share.cancel")}
                 </button>
               </div>
             </form>
