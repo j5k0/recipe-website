@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CloseIcon } from "../assets";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ChangePasswordModalProps {
   onClose: () => void;
@@ -12,12 +13,13 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = async () => {
     setError(null);
-    if (!currentPassword || !newPassword) { setError("Please fill in all fields"); return; }
-    if (newPassword.length < 8) { setError("Password must be at least 8 characters"); return; }
-    if (newPassword !== confirmPassword) { setError("Passwords do not match"); return; }
+    if (!currentPassword || !newPassword) { setError(t("changePassword.fillAll")); return; }
+    if (newPassword.length < 8) { setError(t("changePassword.minLength")); return; }
+    if (newPassword !== confirmPassword) { setError(t("changePassword.noMatch")); return; }
     setLoading(true);
     try {
       const res = await fetch(import.meta.env.VITE_BACKEND_URL + "/auth/user/password", {
@@ -28,8 +30,8 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
       });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 2000); return; }
       const data = await res.json();
-      setError(data.error === "Incorrect password" ? "Incorrect current password" : data.error || "Failed to update password");
-    } catch { setError("Something went wrong. Try again."); }
+      setError(data.error === "Incorrect password" ? t("changePassword.incorrectCurrent") : data.error || t("changePassword.failed"));
+    } catch { setError(t("changePassword.somethingWrong")); }
     finally { setLoading(false); }
   };
 
@@ -44,13 +46,13 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
             <span className="text-xl">🔒</span>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Change password</h2>
-            <p className="text-xs text-gray-400 dark:text-gray-300">Update your account password</p>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t("changePassword.title")}</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-300">{t("changePassword.subtitle")}</p>
           </div>
         </div>
         <input
           type="password"
-          placeholder="Current password"
+          placeholder={t("changePassword.currentPassword")}
           value={currentPassword}
           onChange={(e) => { setCurrentPassword(e.target.value); setError(null); }}
           className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 mb-3"
@@ -58,14 +60,14 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
         />
         <input
           type="password"
-          placeholder="New password (min 8 characters)"
+          placeholder={t("changePassword.newPassword")}
           value={newPassword}
           onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
           className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 mb-3"
         />
         <input
           type="password"
-          placeholder="Confirm new password"
+          placeholder={t("changePassword.confirmPassword")}
           value={confirmPassword}
           onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -79,7 +81,7 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
             success ? "bg-lime-700 text-white" : "bg-gray-900 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900"
           } disabled:opacity-60`}
         >
-          {success ? "Password changed!" : loading ? "Updating…" : "Update password"}
+          {success ? t("changePassword.changed") : loading ? t("changePassword.updating") : t("changePassword.updateBtn")}
         </button>
       </div>
     </div>
