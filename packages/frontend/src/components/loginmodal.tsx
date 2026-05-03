@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Logo, CloseIcon } from "../assets";
-import { useAuth } from "../AuthContext"
+import { useAuth } from "../AuthContext";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false);
@@ -11,11 +12,12 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
   const [loginState, setLoginState] = useState<"fail" | "success" | "unknown">("unknown");
   const overlayRef = useRef<HTMLDivElement>(null);
   const { refreshUser } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10);
+    const timer = setTimeout(() => setVisible(true), 10);
     document.body.style.overflow = "hidden";
-    return () => { clearTimeout(t); document.body.style.overflow = ""; };
+    return () => { clearTimeout(timer); document.body.style.overflow = ""; };
   }, []);
 
   useEffect(() => {
@@ -77,15 +79,15 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
 
   // TODO: surely this can be done in a better way than redeclaring the same classes multiple times
   const loginButtonStates: Record<string, { additionalClasses: string, label: string }> = {
-      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: "Sign in"},
-      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: "Failed to sign in" },
-      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: "Success"}
+      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: t("login.signInBtn")},
+      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: t("login.failedSignIn") },
+      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: t("login.success")}
   }
 
   const signUpButtonStates: Record<string, { additionalClasses: string, label: string }> = {
-      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: "Create account"},
-      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: "Failed to sign up" },
-      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: "Success"}
+      unknown: { additionalClasses: "w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mt-1 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200", label: t("login.createAccount")},
+      fail: { additionalClasses: "w-full py-2.5 bg-rose-700 text-white text-sm font-medium rounded-xl hover:bg-rose-800 transition-colors mt-1", label: t("login.failedSignUp") },
+      success: { additionalClasses: "w-full py-2.5 bg-lime-700 text-white text-sm font-medium rounded-xl hover:bg-lime-800 transition-colors mt-1", label: t("login.success")}
   }
 
 
@@ -129,20 +131,20 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
                 setTab("login"),
                 setLoginState("unknown")
             )}
-              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "login" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" :
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
-              Sign in
+              {t("login.signIn")}
             </button>
             <button
             onClick={() => (
                 setTab("register"),
                 setLoginState("unknown")
             )}
-              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" : 
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${tab === "register" ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white" :
                 "text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"}`}
             >
-              Register
+              {t("login.register")}
             </button>
           </div>
 
@@ -150,7 +152,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           <form onSubmit={handleSubmit} className="space-y-3">
             {tab === "register" && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Name</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">{t("login.name")}</label>
                 <input
                   type="text"
                   value={name}
@@ -158,7 +160,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
                       setName(e.target.value),
                       setLoginState("unknown")
                   )}
-                  placeholder="Your name"
+                  placeholder={t("login.namePlaceholder")}
                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
                    dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
                   required
@@ -166,7 +168,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Email</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">{t("login.email")}</label>
               <input
                 type="email"
                 value={email}
@@ -174,14 +176,14 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
                     setEmail(e.target.value),
                     setLoginState("unknown")
                 )}
-                placeholder="you@example.com"
+                placeholder={t("login.emailPlaceholder")}
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 placeholder:text-gray-400 transition-all
                  dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">Password</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1 dark:text-gray-300">{t("login.password")}</label>
               <input
                 type="password"
                 value={password}
@@ -199,7 +201,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
             {tab === "login" && (
               <div className="text-right">
                 <button type="button" className="text-xs text-gray-400 hover:text-gray-700 transition-colors  dark:text-gray-300 dark:hover:text-white">
-                  Forgot password?
+                  {t("login.forgotPassword")}
                 </button>
               </div>
             )}
