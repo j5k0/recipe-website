@@ -13,14 +13,17 @@ export type SortOption =
 interface SortDropdownProps {
   value: SortOption;
   onChange: (value: SortOption) => void;
+  options?: { value: SortOption; label: string }[];
+  hideReviews?: boolean;
+  hideVotes?: boolean;
 }
 
-export function SortDropdown({ value, onChange }: SortDropdownProps) {
+export function SortDropdown({ value, onChange, options, hideReviews, hideVotes }: SortDropdownProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
-  const SORT_OPTIONS = [
+  const DEFAULT_OPTIONS = [
     { value: "date-desc" as SortOption, label: t("sort.newestFirst") },
     { value: "date-asc" as SortOption, label: t("sort.oldestFirst") },
     { value: "reviews-desc" as SortOption, label: t("sort.highestRated") },
@@ -28,6 +31,12 @@ export function SortDropdown({ value, onChange }: SortDropdownProps) {
     { value: "votes-desc" as SortOption, label: t("sort.highestVoted") },
     { value: "votes-asc" as SortOption, label: t("sort.lowestVoted") },
   ];
+
+  const SORT_OPTIONS = options || DEFAULT_OPTIONS.filter(o => {
+    if (hideReviews && o.value.startsWith("reviews-")) return false;
+    if (hideVotes && o.value.startsWith("votes-")) return false;
+    return true;
+  });
 
   const selectedOption = SORT_OPTIONS.find((o) => o.value === value);
 
