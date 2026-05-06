@@ -7,6 +7,7 @@ import About from "./pages/About";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
 import Discover from "./pages/Discover";
+import TopRecipes from "./pages/TopRecipes";
 import LikedRecipes from "./pages/LikedRecipes";
 import { Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./AuthContext"
@@ -20,6 +21,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/recipes" element={<RecipesPage />} />
+            <Route path="/top-recipes" element={<TopRecipes />} />
             <Route path="/about" element={<About />} />
             <Route path="/account" element={<Account />} />
             <Route path="/settings" element={<Settings />} />

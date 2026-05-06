@@ -12,6 +12,7 @@ import {
 } from "../assets";
 import LoginModal from "./loginmodal.tsx";
 import { useAuth } from "../AuthContext";
+import { TopRecipesIcon } from "../assets";
 import { useLanguage } from "../i18n/LanguageContext";
 import { OPEN_LOGIN_MODAL_EVENT } from "../utils/loginEvents";
 
@@ -218,6 +219,9 @@ export default function Navigation() {
             </NavLink>
             <NavLink to="/discover" title="Discover" className={iconNavClass}>
               <DiscoverIcon className="w-4.5 h-4.5" />
+            </NavLink>
+            <NavLink to="/top-recipes" title="Top Recipes" className={iconNavClass}>
+              <TopRecipesIcon className="w-4.5 h-4.5" />
             </NavLink>
             <NavLink to="/about" title="About" className={iconNavClass}>
               <InformationIcon className="w-4.5 h-4.5" />
